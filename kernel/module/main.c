@@ -2412,6 +2412,9 @@ static char *custom_module_blacklist[] = {
 #if IS_ENABLED(CONFIG_SERIAL_MSM_GENI)
 	"msm_geni_serial",
 #endif
+#if IS_BUILTIN(CONFIG_TCP_CONG_BBR)
+    "oplus_network_tuning",
+#endif
 };
 
 static bool blacklisted(const char *module_name)
@@ -2991,7 +2994,7 @@ skip_intercept:
 	if (err)
 		goto free_copy;
 
-    if (blacklisted(info->name)) {
+	if (blacklisted(info->name)) {
 		pr_err("Module %s is blacklisted\n", info->name);
 		goto free_copy;
 	}
