@@ -1231,7 +1231,6 @@
   __traceiter_android_rvh_after_enqueue_task
   __traceiter_android_rvh_build_perf_domains
   __traceiter_android_rvh_cpu_cgroup_attach
-  __traceiter_android_rvh_effective_cpu_util
   __traceiter_android_rvh_find_busiest_queue
   __traceiter_android_rvh_flush_task
   __traceiter_android_rvh_migrate_queued_task
@@ -1258,7 +1257,6 @@
   __tracepoint_android_rvh_after_enqueue_task
   __tracepoint_android_rvh_build_perf_domains
   __tracepoint_android_rvh_cpu_cgroup_attach
-  __tracepoint_android_rvh_effective_cpu_util
   __tracepoint_android_rvh_find_busiest_queue
   __tracepoint_android_rvh_flush_task
   __tracepoint_android_rvh_migrate_queued_task
