@@ -17,10 +17,6 @@
 #define REG_SYS_PW_CTRL		0x0004
 #define BIT_PFM_WOWL		BIT(3)
 #define BIT_APFM_OFFMAC		BIT(9)
-#define REG_APS_FSMCO		0x0004
-#define APS_FSMCO_MAC_ENABLE	BIT(8)
-#define APS_FSMCO_MAC_OFF	BIT(9)
-#define APS_FSMCO_HW_POWERDOWN	BIT(15)
 #define REG_SYS_CLK_CTRL	0x0008
 #define BIT_CPU_CLK_EN		BIT(14)
 
@@ -155,11 +151,6 @@
 
 #define REG_PMC_DBG_CTRL1	0xa8
 #define BITS_PMC_BT_IQK_STS	GENMASK(22, 21)
-
-#define REG_HIMR0		0xb0
-#define REG_HISR0		0xb4
-#define REG_HIMR1		0xb8
-#define REG_HISR1		0xbc
 
 #define REG_PAD_CTRL2		0x00C4
 #define BIT_RSM_EN_V1		BIT(16)
