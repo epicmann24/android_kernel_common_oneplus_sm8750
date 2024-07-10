@@ -996,12 +996,9 @@ int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		goto err_destroy_rxwq;
 	}
 
-<<<<<<< HEAD
 	rtw_usb_phy_cfg(rtwdev, USB_SPEED_HIGH);
 	rtw_usb_phy_cfg(rtwdev, USB_SPEED_SUPER);
 
-=======
->>>>>>> 315c23a64e995 (wifi: rtw88: usb: Support USB 3 with RTL8822CU/RTL8822BU)
 	ret = rtw_usb_switch_mode(rtwdev);
 	if (ret) {
 		/* Not a fail, but we do need to skip rtw_register_hw. */
