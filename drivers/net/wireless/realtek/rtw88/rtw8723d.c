@@ -1963,27 +1963,7 @@ static void rtw8723d_pwr_track(struct rtw_dev *rtwdev)
 	dm_info->pwr_trk_triggered = false;
 }
 
-static void rtw8723d_fill_txdesc_checksum(struct rtw_dev *rtwdev,
-					  struct rtw_tx_pkt_info *pkt_info,
-					  u8 *txdesc)
-{
-	size_t words = 32 / 2; /* calculate the first 32 bytes (16 words) */
-	__le16 chksum = 0;
-	__le16 *data = (__le16 *)(txdesc);
-	struct rtw_tx_desc *tx_desc = (struct rtw_tx_desc *)txdesc;
-
-	le32p_replace_bits(&tx_desc->w7, 0, RTW_TX_DESC_W7_TXDESC_CHECKSUM);
-
-	while (words--)
-		chksum ^= *data++;
-
-	chksum = ~chksum;
-
-	le32p_replace_bits(&tx_desc->w7, __le16_to_cpu(chksum),
-			   RTW_TX_DESC_W7_TXDESC_CHECKSUM);
-}
-
-static struct rtw_chip_ops rtw8723d_ops = {
+static const struct rtw_chip_ops rtw8723d_ops = {
 	.phy_set_param		= rtw8723d_phy_set_param,
 	.read_efuse		= rtw8723d_read_efuse,
 	.query_rx_desc		= rtw8723d_query_rx_desc,
@@ -2341,7 +2321,7 @@ static const struct rtw_pwr_seq_cmd trans_cardemu_to_act_8723d[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static const struct rtw_pwr_seq_cmd *card_enable_flow_8723d[] = {
+static const struct rtw_pwr_seq_cmd * const card_enable_flow_8723d[] = {
 	trans_carddis_to_cardemu_8723d,
 	trans_cardemu_to_act_8723d,
 	NULL
@@ -2557,7 +2537,7 @@ static const struct rtw_pwr_seq_cmd trans_act_to_post_carddis_8723d[] = {
 	 RTW_PWR_CMD_END, 0, 0},
 };
 
-static const struct rtw_pwr_seq_cmd *card_disable_flow_8723d[] = {
+static const struct rtw_pwr_seq_cmd * const card_disable_flow_8723d[] = {
 	trans_act_to_lps_8723d,
 	trans_act_to_pre_carddis_8723d,
 	trans_act_to_cardemu_8723d,
