@@ -583,9 +583,40 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 		skb_put(skb, pkt_stat.pkt_len);
 		skb_reserve(skb, pkt_offset);
 
-		rtw_update_rx_freq_for_invalid(rtwdev, skb, &rx_status, &pkt_stat);
-		memcpy(skb->cb, &rx_status, sizeof(rx_status));
-		ieee80211_rx_irqsafe(rtwdev->hw, skb);
+		do {
+			rx_desc = skb->data;
+			rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat,
+					     &rx_status);
+			pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
+				     pkt_stat.shift;
+
+			next_pkt = round_up(pkt_stat.pkt_len + pkt_offset, 8);
+
+			if (urb_len >= next_pkt + pkt_desc_sz)
+				next_skb = skb_clone(skb, GFP_KERNEL);
+			else
+				next_skb = NULL;
+
+			if (pkt_stat.is_c2h) {
+				skb_trim(skb, pkt_stat.pkt_len + pkt_offset);
+				rtw_fw_c2h_cmd_rx_irqsafe(rtwdev, pkt_offset, skb);
+			} else {
+				skb_pull(skb, pkt_offset);
+				skb_trim(skb, pkt_stat.pkt_len);
+				rtw_update_rx_freq_for_invalid(rtwdev, skb,
+							       &rx_status,
+							       &pkt_stat);
+				rtw_rx_stats(rtwdev, pkt_stat.vif, skb);
+				memcpy(skb->cb, &rx_status, sizeof(rx_status));
+				ieee80211_rx_irqsafe(rtwdev->hw, skb);
+			}
+
+			skb = next_skb;
+			if (skb)
+				skb_pull(skb, next_pkt);
+
+			urb_len -= next_pkt;
+		} while (skb);
 	}
 }
 
