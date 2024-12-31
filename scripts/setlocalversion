@@ -145,7 +145,7 @@ scm_version()
 		git --no-optional-locks status -uno --porcelain 2>/dev/null ||
 		git diff-index --name-only HEAD
 	} | read dummy; then
-		printf '%s' -dirty
+		printf '%s'
 	fi
 }
 
@@ -206,4 +206,4 @@ elif [ "${LOCALVERSION+set}" != "set" ]; then
 fi
 
 #echo "${KERNELVERSION}${file_localversion}${config_localversion}${LOCALVERSION}${scm_version}"
-echo "${KERNELVERSION}-android15-8-gf4dc45704e54-abogki446052083-4k${LOCALVERSION}"
+echo "${KERNELVERSION}-android15-8-gf4dc45704e54-abogki446052083${config_localversion}${LOCALVERSION}"
