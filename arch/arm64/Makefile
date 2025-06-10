@@ -108,6 +108,22 @@ KBUILD_CFLAGS	+= -Wa,-march=$(asm-arch) \
 		   -DARM64_ASM_ARCH='"$(asm-arch)"'
 endif
 
+KBUILD_CFLAGS += $(call cc-option, -mcpu=cortex-a78)
+KBUILD_AFLAGS += $(call cc-option, -Wa,-mcpu=cortex-a78)
+KBUILD_CFLAGS   += $(call cc-option,-frename-registers)
+KBUILD_CFLAGS   += $(call cc-option,-fsched-interblock)
+KBUILD_CFLAGS   += $(call cc-option,-fgcse-after-reload)
+KBUILD_CFLAGS   += $(call cc-option,-fuse-ld=lld)
+KBUILD_CFLAGS   += $(call cc-disable-warning,maybe-uninitialized)
+KBUILD_CFLAGS   += -ffp-contract=fast -g0
+KBUILD_CFLAGS += $(call cc-option,-floop-unroll-and-jam)
+KBUILD_CFLAGS += $(call cc-option,-fpeel-loops)
+KBUILD_CFLAGS += $(call cc-option,-fprefetch-loop-arrays)
+KBUILD_CFLAGS += $(call cc-option,-fno-semantic-interposition)
+KBUILD_CFLAGS += $(call cc-option,-fno-math-errno)
+KBUILD_CFLAGS += $(call cc-option,-fschedule-insns2)
+LDFLAGS += --gc-sections --icf=all
+
 ifeq ($(CONFIG_SHADOW_CALL_STACK), y)
 KBUILD_CFLAGS	+= -ffixed-x18
 KBUILD_RUSTFLAGS += -Ctarget-feature=+reserve-x18
