@@ -3097,7 +3097,7 @@ static inline loff_t folio_seek_hole_data(struct xa_state *xas,
 		if (ops->is_partially_uptodate(folio, offset, bsz) ==
 							seek_data)
 			break;
-		start = (start + bsz) & ~(bsz - 1);
+		start = (start + bsz) & ~((u64)bsz - 1);
 		offset += bsz;
 	} while (offset < folio_size(folio));
 unlock:
@@ -3687,12 +3687,14 @@ vm_fault_t filemap_map_pages(struct vm_fault *vmf,
 	vm_fault_t ret = 0;
 	unsigned int nr_pages = 0, mmap_miss = 0, mmap_miss_saved;
 	pgoff_t first_pgoff = 0;
+	pgoff_t orig_start_pgoff = start_pgoff;
 
 	rcu_read_lock();
 	folio = next_uptodate_folio(&xas, mapping, end_pgoff);
 	if (!folio)
 		goto out;
 	first_pgoff = xas.xa_index;
+	orig_start_pgoff = xas.xa_index;
 
 	if (filemap_map_pmd(vmf, folio, start_pgoff)) {
 		ret = VM_FAULT_NOPAGE;
@@ -3736,6 +3738,7 @@ out:
 	else
 		WRITE_ONCE(file->f_ra.mmap_miss, mmap_miss_saved - mmap_miss);
 	trace_android_vh_filemap_map_pages(file, first_pgoff, last_pgoff, ret);
+	trace_android_vh_filemap_map_pages_range(file, orig_start_pgoff, last_pgoff, ret);
 
 	return ret;
 }
@@ -4362,6 +4365,20 @@ resched:
 }
 
 /*
+ * See mincore: reveal pagecache information only for files
+ * that the calling process has write access to, or could (if
+ * tried) open for writing.
+ */
+static inline bool can_do_cachestat(struct file *f)
+{
+	if (f->f_mode & FMODE_WRITE)
+		return true;
+	if (inode_owner_or_capable(file_mnt_idmap(f), file_inode(f)))
+		return true;
+	return file_permission(f, MAY_WRITE) == 0;
+}
+
+/*
  * The cachestat(2) system call.
  *
  * cachestat() returns the page cache statistics of a file in the
@@ -4418,6 +4435,11 @@ SYSCALL_DEFINE4(cachestat, unsigned int, fd,
 	if (is_file_hugepages(f.file)) {
 		fdput(f);
 		return -EOPNOTSUPP;
+	}
+
+	if (!can_do_cachestat(f.file)) {
+		fdput(f);
+		return -EPERM;
 	}
 
 	if (flags != 0) {
