@@ -1497,8 +1497,15 @@ static int __remove_mapping(struct address_space *mapping, struct folio *folio,
 		 * same address_space.
 		 */
 		if (reclaimed && folio_is_file_lru(folio) &&
-		    !mapping_exiting(mapping) && !dax_mapping(mapping))
+		    !mapping_exiting(mapping) && !dax_mapping(mapping)) {
+			bool keep = false;
+
+			trace_android_vh_keep_reclaimed_folio(folio, refcount, &keep);
+			if (keep)
+				goto cannot_free;
 			shadow = workingset_eviction(folio, target_memcg);
+		}
+		trace_android_vh_clear_reclaimed_folio(folio, reclaimed);
 		__filemap_remove_folio(folio, shadow);
 		xa_unlock_irq(&mapping->i_pages);
 		if (mapping_shrinkable(mapping))
@@ -5487,6 +5494,12 @@ retry:
 			type ? LRU_INACTIVE_FILE : LRU_INACTIVE_ANON);
 
 	list_for_each_entry_safe_reverse(folio, next, &list, lru) {
+		bool bypass = false;
+
+		trace_android_vh_evict_folios_bypass(folio, &bypass);
+		if (bypass)
+			continue;
+
 		if (!folio_evictable(folio)) {
 			list_del(&folio->lru);
 			folio_putback_lru(folio);
@@ -7688,6 +7701,7 @@ static bool kswapd_shrink_node(pg_data_t *pgdat,
 
 		sc->nr_to_reclaim += max(high_wmark_pages(zone), SWAP_CLUSTER_MAX);
 	}
+	trace_android_rvh_kswapd_shrink_node(&sc->nr_to_reclaim);
 
 	/*
 	 * Historically care was taken to put equal pressure on all zones but
@@ -8468,7 +8482,7 @@ int node_reclaim(struct pglist_data *pgdat, gfp_t gfp_mask, unsigned int order)
 		return NODE_RECLAIM_NOSCAN;
 
 	ret = __node_reclaim(pgdat, gfp_mask, order);
-	clear_bit(PGDAT_RECLAIM_LOCKED, &pgdat->flags);
+	clear_bit_unlock(PGDAT_RECLAIM_LOCKED, &pgdat->flags);
 
 	if (!ret)
 		count_vm_event(PGSCAN_ZONE_RECLAIM_FAILED);
