@@ -730,7 +730,7 @@ static inline void memcg_rstat_updated(struct mem_cgroup *memcg, int val)
 	for (; statc; statc = statc->parent) {
 		stats_updates = READ_ONCE(statc->stats_updates) + abs(val);
 		WRITE_ONCE(statc->stats_updates, stats_updates);
-		if (stats_updates < MEMCG_CHARGE_BATCH)
+		if (unlikely(stats_updates < MEMCG_CHARGE_BATCH))
 			continue;
 
 		/*
@@ -892,7 +892,7 @@ void __mod_lruvec_state(struct lruvec *lruvec, enum node_stat_item idx,
 	__mod_node_page_state(lruvec_pgdat(lruvec), idx, val);
 
 	/* Update memcg and lruvec */
-	if (!mem_cgroup_disabled())
+	if (likely(!mem_cgroup_disabled()))
 		__mod_memcg_lruvec_state(lruvec, idx, val);
 }
 EXPORT_SYMBOL_GPL(__mod_lruvec_state);
@@ -2219,7 +2219,7 @@ again:
 
 static void __folio_memcg_unlock(struct mem_cgroup *memcg)
 {
-	if (memcg && memcg->move_lock_task == current) {
+	if (likely(memcg && memcg->move_lock_task == current)) {
 		unsigned long flags = memcg->move_lock_flags;
 
 		memcg->move_lock_task = NULL;
