@@ -1189,10 +1189,13 @@ static __init_or_module void
 trace_initcall_finish_cb(void *data, initcall_t fn, int ret)
 {
 	ktime_t rettime, *calltime = data;
+	long long delta;
 
 	rettime = ktime_get();
-	printk(KERN_DEBUG "initcall %pS returned %d after %lld usecs\n",
-		 fn, ret, (unsigned long long)ktime_us_delta(rettime, *calltime));
+	delta = ktime_us_delta(rettime, *calltime);
+	if (ret || delta)
+		printk(KERN_DEBUG "initcall %pS returned %d after %lld usecs\n",
+			fn, ret, (unsigned long long)ktime_us_delta(rettime, *calltime));
 }
 
 static ktime_t initcall_calltime;
