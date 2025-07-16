@@ -839,6 +839,13 @@ KBUILD_CFLAGS	+= -fno-delete-null-pointer-checks
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
 KBUILD_CFLAGS += -O2
 KBUILD_RUSTFLAGS += -Copt-level=3
+else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS += -Os
+KBUILD_RUSTFLAGS += -Copt-level=s
+endif
+
+# Polly
+ifdef CONFIG_LLVM_POLLY
 KBUILD_CFLAGS	+= -fvectorize -funroll-loops -mllvm -polly \
                     -mllvm -polly-run-inliner \
                     -mllvm -polly-ast-use-context \
@@ -852,10 +859,10 @@ KBUILD_CFLAGS	+= -fvectorize -funroll-loops -mllvm -polly \
                     -mllvm -polly-omp-backend=LLVM \
                     -mllvm -polly-scheduling=dynamic \
                     -mllvm -polly-scheduling-chunksize=1
+endif
+
+ifdef CONFIG_LD_DEAD_CODE_DATA_ELIMINATION
 POLLY_FLAGS	+= -mllvm -polly-run-dce
-else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS += -Os
-KBUILD_RUSTFLAGS += -Copt-level=s
 endif
 
 # Always set `debug-assertions` and `overflow-checks` because their default
