@@ -4106,6 +4106,11 @@ bool cpus_share_cache(int this_cpu, int that_cpu)
 
 static inline bool ttwu_queue_cond(struct task_struct *p, int cpu)
 {
+#ifdef CONFIG_SMP
+	if (p->sched_class == &stop_sched_class)
+		return false;
+#endif
+
 	/*
 	 * Do not complicate things with the async wake_list while the CPU is
 	 * in hotplug state.
@@ -7267,6 +7272,7 @@ void __setscheduler_prio(struct task_struct *p, int prio)
 		p->sched_class = &fair_sched_class;
 
 	p->prio = prio;
+	trace_android_rvh_setscheduler_prio(p);
 }
 
 #ifdef CONFIG_RT_MUTEXES

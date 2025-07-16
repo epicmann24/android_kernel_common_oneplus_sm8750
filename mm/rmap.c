@@ -1602,8 +1602,8 @@ static __always_inline void __folio_remove_rmap(struct folio *folio,
 		 * Check partially_mapped first to ensure it is a large folio.
 		 */
 		if (folio_test_anon(folio) && partially_mapped &&
-		    list_empty(&folio->_deferred_list))
-			deferred_split_folio(folio);
+		    !folio_test_partially_mapped(folio))
+			deferred_split_folio(folio, true);
 	}
 
 	/*
@@ -1632,6 +1632,8 @@ void folio_remove_rmap_ptes(struct folio *folio, struct page *page,
 		int nr_pages, struct vm_area_struct *vma)
 {
 	__folio_remove_rmap(folio, page, nr_pages, vma, RMAP_LEVEL_PTE);
+
+	trace_android_vh_folio_remove_rmap_ptes(folio);
 }
 
 /**

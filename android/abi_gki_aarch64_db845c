@@ -153,6 +153,7 @@
   __devm_regmap_init_i2c
   __devm_regmap_init_mmio_clk
   devm_regulator_bulk_get
+  devm_regulator_bulk_get_enable
   devm_regulator_get
   devm_regulator_get_optional
   devm_regulator_register
@@ -269,6 +270,7 @@
   flush_work
   __flush_workqueue
   fortify_panic
+  fput
   free_io_pgtable_ops
   free_irq
   fwnode_handle_put
@@ -796,7 +798,15 @@
   trace_event_raw_init
   trace_event_reg
   trace_handle_return
+  __traceiter_rwmmio_post_read
+  __traceiter_rwmmio_post_write
+  __traceiter_rwmmio_read
+  __traceiter_rwmmio_write
   __traceiter_sk_data_ready
+  __tracepoint_rwmmio_post_read
+  __tracepoint_rwmmio_post_write
+  __tracepoint_rwmmio_read
+  __tracepoint_rwmmio_write
   __tracepoint_sk_data_ready
   trace_raw_output_prep
   __trace_trigger_soft_disabled
@@ -1702,6 +1712,7 @@
 
 # required by pinctrl-msm.ko
   device_property_read_u16_array
+  devm_register_sys_off_handler
   gpiochip_line_is_valid
   gpiochip_lock_as_irq
   gpiochip_unlock_as_irq
