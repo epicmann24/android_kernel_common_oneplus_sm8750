@@ -10414,7 +10414,7 @@ static int ufshcd_set_dma_mask(struct ufs_hba *hba)
 	if (hba->android_quirks & UFSHCD_ANDROID_QUIRK_36BIT_ADDRESS_DMA)
 		return dma_set_mask_and_coherent(hba->dev, DMA_BIT_MASK(36));
 	if (hba->capabilities & MASK_64_ADDRESSING_SUPPORT) {
-		if (!dma_set_mask_and_coherent(hba->dev, DMA_BIT_MASK(64)))
+		if (!dma_set_mask_and_coherent(hba->dev, ~0ULL))
 			return 0;
 	}
 	return dma_set_mask_and_coherent(hba->dev, DMA_BIT_MASK(32));
