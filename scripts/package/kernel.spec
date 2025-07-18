@@ -63,7 +63,7 @@ ln -s efi/vmlinuz-%{KERNELRELEASE} %{buildroot}/boot/
 %else
 cp $(%{make} %{makeflags} -s image_name) %{buildroot}/boot/vmlinuz-%{KERNELRELEASE}
 %endif
-%{make} %{makeflags} INSTALL_MOD_PATH=%{buildroot} modules_install
+%{make} %{makeflags} INSTALL_MOD_PATH=%{buildroot} INSTALL_MOD_STRIP=1 modules_install
 %{make} %{makeflags} INSTALL_HDR_PATH=%{buildroot}/usr headers_install
 cp System.map %{buildroot}/boot/System.map-%{KERNELRELEASE}
 cp .config %{buildroot}/boot/config-%{KERNELRELEASE}
