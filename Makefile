@@ -839,6 +839,8 @@ KBUILD_CFLAGS	+= -fno-delete-null-pointer-checks
 ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
 KBUILD_CFLAGS += -O2
 KBUILD_RUSTFLAGS += -Copt-level=3
+KBUILD_CFLAGS   += -fno-sanitize=array-bounds
+KBUILD_CFLAGS   += -fno-sanitize=object-size
 KBUILD_CFLAGS	+= -fvectorize -funroll-loops -mllvm -polly \
                     -mllvm -polly-run-inliner \
                     -mllvm -polly-ast-use-context \
