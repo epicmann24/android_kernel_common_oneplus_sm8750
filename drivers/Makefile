@@ -202,3 +202,6 @@ obj-$(CONFIG_CDX_BUS)		+= cdx/
 obj-$(CONFIG_S390)		+= s390/
 
 obj-$(CONFIG_AUTHORITY_CTRL)	+= auth_ctl/
+
+#Re-Kernel Support
+obj-$(CONFIG_REKERNEL)		+= rekernel/
