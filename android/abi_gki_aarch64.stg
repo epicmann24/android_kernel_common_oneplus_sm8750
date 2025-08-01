@@ -362439,15 +362439,6 @@ elf_symbol {
   full_name: "__traceiter_android_vh_ep_create_wakeup_source"
 }
 elf_symbol {
-  id: 0x10157f79
-  name: "__traceiter_android_vh_evict_folios_bypass"
-  is_defined: true
-  symbol_type: FUNCTION
-  crc: 0xb13deb47
-  type_id: 0x9b2e0ad9
-  full_name: "__traceiter_android_vh_evict_folios_bypass"
-}
-elf_symbol {
   id: 0x1921d10d
   name: "__traceiter_android_vh_exit_check"
   is_defined: true
@@ -369556,15 +369547,6 @@ elf_symbol {
   crc: 0x4c0031cd
   type_id: 0x18ccbd2c
   full_name: "__tracepoint_android_vh_ep_create_wakeup_source"
-}
-elf_symbol {
-  id: 0x4276556f
-  name: "__tracepoint_android_vh_evict_folios_bypass"
-  is_defined: true
-  symbol_type: OBJECT
-  crc: 0xd0fd44dc
-  type_id: 0x18ccbd2c
-  full_name: "__tracepoint_android_vh_evict_folios_bypass"
 }
 elf_symbol {
   id: 0x684e5f4f
@@ -437322,7 +437304,6 @@ interface {
   symbol_id: 0x02c8f91b
   symbol_id: 0xdcaa59a3
   symbol_id: 0x7f1591a1
-  symbol_id: 0x10157f79
   symbol_id: 0x1921d10d
   symbol_id: 0xb38eccdd
   symbol_id: 0x1f554c2a
@@ -438113,7 +438094,6 @@ interface {
   symbol_id: 0xe5deb919
   symbol_id: 0x54b2cd01
   symbol_id: 0xdef7c547
-  symbol_id: 0x4276556f
   symbol_id: 0x684e5f4f
   symbol_id: 0xac5d150b
   symbol_id: 0x0d418d38
