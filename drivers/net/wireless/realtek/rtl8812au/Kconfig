@@ -1,0 +1,7 @@
+config 88XXAU
+	tristate "Realtek 88XXau USB WiFi"
+	default n
+	depends on USB && NETHUNTER_USB_SUPPORT
+	help
+	  RTL88XXAU drivers for Kali Nethunter
+
