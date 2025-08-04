@@ -1,0 +1,7 @@
+config RTL88X2BU
+	tristate "Realtek 88X2BU USB WiFi"
+	default y if NETHUNTER_USB_SUPPORT
+	depends on USB && NETHUNTER_USB_SUPPORT
+	help
+	  RTL88X2BU drivers for Kali Nethunter
+
