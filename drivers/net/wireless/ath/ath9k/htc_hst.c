@@ -238,7 +238,11 @@ int htc_init(struct htc_target *target)
 	return htc_setup_complete(target);
 }
 
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+int htc_connect_service_hst(struct htc_target *target,
+#else
 int htc_connect_service(struct htc_target *target,
+#endif
 		     struct htc_service_connreq *service_connreq,
 		     enum htc_endpoint_id *conn_rsp_epid)
 {
@@ -318,12 +322,20 @@ int htc_send_epid(struct htc_target *target, struct sk_buff *skb,
 	return htc_issue_send(target, skb, skb->len, 0, epid);
 }
 
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+void htc_stop_hst(struct htc_target *target)
+#else
 void htc_stop(struct htc_target *target)
+#endif
 {
 	target->hif->stop(target->hif_dev);
 }
 
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+void htc_start_hst(struct htc_target *target)
+#else
 void htc_start(struct htc_target *target)
+#endif
 {
 	target->hif->start(target->hif_dev);
 }

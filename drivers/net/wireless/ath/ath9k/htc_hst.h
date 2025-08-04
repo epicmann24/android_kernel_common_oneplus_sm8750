@@ -203,14 +203,23 @@ struct htc_comp_msg {
 } __packed;
 
 int htc_init(struct htc_target *target);
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+int htc_connect_service_hst(struct htc_target *target,
+#else
 int htc_connect_service(struct htc_target *target,
+#endif
 			  struct htc_service_connreq *service_connreq,
 			  enum htc_endpoint_id *conn_rsp_eid);
 int htc_send(struct htc_target *target, struct sk_buff *skb);
 int htc_send_epid(struct htc_target *target, struct sk_buff *skb,
 		  enum htc_endpoint_id epid);
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+void htc_stop_hst(struct htc_target *target);
+void htc_start_hst(struct htc_target *target);
+#else
 void htc_stop(struct htc_target *target);
 void htc_start(struct htc_target *target);
+#endif
 void htc_sta_drain(struct htc_target *target, u8 idx);
 
 void ath9k_htc_rx_msg(struct htc_target *htc_handle,

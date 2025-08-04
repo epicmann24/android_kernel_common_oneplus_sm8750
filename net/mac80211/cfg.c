@@ -931,10 +931,14 @@ static int ieee80211_set_monitor_channel(struct wiphy *wiphy,
 		}
 	} else {
 		mutex_lock(&local->mtx);
+#ifndef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
 		if (local->open_count == local->monitors) {
+#endif
 			local->_oper_chandef = *chandef;
 			ieee80211_hw_config(local, 0);
+#ifndef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
 		}
+#endif
 		mutex_unlock(&local->mtx);
 	}
 

@@ -226,7 +226,11 @@ void ath9k_htc_reset(struct ath9k_htc_priv *priv)
 	WMI_CMD_BUF(WMI_SET_MODE_CMDID, &htc_mode);
 
 	WMI_CMD(WMI_ENABLE_INTR_CMDID);
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+ 	htc_start_hst(priv->htc);
+#else
 	htc_start(priv->htc);
+#endif
 	ath9k_htc_vif_reconfig(priv);
 	ieee80211_wake_queues(priv->hw);
 
@@ -302,7 +306,11 @@ static int ath9k_htc_set_channel(struct ath9k_htc_priv *priv,
 	if (ret)
 		goto err;
 
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+ 	htc_start_hst(priv->htc);
+#else
 	htc_start(priv->htc);
+#endif
 
 	if (!test_bit(ATH_OP_SCANNING, &common->op_flags) &&
 	    !(hw->conf.flags & IEEE80211_CONF_OFFCHANNEL))
@@ -955,7 +963,11 @@ static int ath9k_htc_start(struct ieee80211_hw *hw)
 			"Failed to update capability in target\n");
 
 	clear_bit(ATH_OP_INVALID, &common->op_flags);
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+	htc_start_hst(priv->htc);
+#else
 	htc_start(priv->htc);
+#endif
 
 	spin_lock_bh(&priv->tx.tx_lock);
 	priv->tx.flags &= ~ATH9K_HTC_OP_TX_QUEUES_STOP;

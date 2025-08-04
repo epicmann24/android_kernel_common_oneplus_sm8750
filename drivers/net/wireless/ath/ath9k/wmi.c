@@ -274,7 +274,11 @@ int ath9k_wmi_connect(struct htc_target *htc, struct wmi *wmi,
 	connect.ep_callbacks.rx = ath9k_wmi_ctrl_rx;
 	connect.service_id = WMI_CONTROL_SVC;
 
+#ifdef CONFIG_NETHUNTER_WIFI_DRIVERS_SUPPORT
+ 	ret = htc_connect_service_hst(htc, &connect, &wmi->ctrl_epid);
+#else
 	ret = htc_connect_service(htc, &connect, &wmi->ctrl_epid);
+#endif
 	if (ret)
 		return ret;
 
