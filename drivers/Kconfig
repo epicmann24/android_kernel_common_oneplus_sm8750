@@ -247,4 +247,6 @@ source "drivers/auth_ctl/Kconfig"
 
 source "drivers/rekernel/Kconfig"
 
+source "drivers/nethunter/Kconfig"
+
 endmenu
