@@ -6,11 +6,43 @@ config NETHUNTER_SUPPORT
 	help
 		Enable basic nethunter support in-kernel which are sysvipc, module support, hci0 support and mac80211 support.
 
-	select SYSVIPC
 	select MODULES
+	select MODULE_FORCE_LOAD
 	select MODULE_UNLOAD
 	select MODVERSIONS
+	
+	select SYSVIPC
+	select SYSVIPC_SYSCTL
+	select POSIX_MQUEUE
+	
+	select IKCONFIG
+	select CPUSETS
+	select AUTOFS4_FS
+	select TMPFS_XATTR
+	select TMPFS_POSIX_ACL
+	select CGROUPS
+	select CGROUP_DEVICE
+	
+	select NAMESPACES
+	select UTS_NS
+	select IPC_NS
+	select USER_NS
+	select PID_NS
+	select NET_NS
+	
+	select DEVTMPFS
+	select DEVTMPFS_MOUNT
+	select FSNOTIFY
+	select DNOTIFY
+	select INOTIFY_USER
+	select FANOTIFY
+	select FANOTIFY_ACCESS_PERMISSIONS
 	select MMC
+	select FHANDLE
+	select EPOLL
+	select SIGNALFD
+	select TIMERFD
+	
 	select BT
 	select BT_BREDR
 	select BT_RFCOMM
@@ -22,21 +54,15 @@ config NETHUNTER_SUPPORT
 	select BT_HS
 	select BT_LE
 	select BT_LEDS
-	select BT_HCIBTUSB
+	select BT_HCIBFUSB
 	select BT_HCIBTSDIO
+	select BT_HCIBTUSB
 	select BT_HCIBTUSB_BCM
 	select BT_HCIBTUSB_RTL
 	select BT_HCIUART
 	select BT_HCIVHCI
 	select BT_HCIBCM203X
 	select BT_HCIBPA10X
-	select BT_HCIBFUSB
-	select CFG80211_WEXT
-	select MAC80211
-	select MAC80211_MESH
-	select MAC80211_RC_MINSTREL
-	select MAC80211_RC_MINSTREL_HT
-	select MAC80211_RC_MINSTREL_VHT
 
 config NETHUNTER_ETHERNET_SUPPORT
 	tristate "Ethernet drivers support"
@@ -45,8 +71,16 @@ config NETHUNTER_ETHERNET_SUPPORT
 	help
 		Enable rtl ethernet drivers support.
 
+	select DNS_RESOLVER
 	select USB_RTL8150
 	select USB_RTL8152
+	select CFG80211
+	select CFG80211_WEXT
+	select MAC80211
+	select MAC80211_MESH
+	select MAC80211_RC_MINSTREL
+	select MAC80211_RC_MINSTREL_HT
+	select MAC80211_RC_MINSTREL_VHT
 
 config NETHUNTER_SDR_SUPPORT
 	tristate "SDR support"
@@ -56,12 +90,20 @@ config NETHUNTER_SDR_SUPPORT
 		Enable SDR drivers support like airspy, hackrf and msi2500.
 
 	select MEDIA_SUPPORT
-	select MEDIA_DIGITAL_TV_SUPPORT
 	select MEDIA_SDR_SUPPORT
 	select MEDIA_USB_SUPPORT
+	select MEDIA_DIGITAL_TV_SUPPORT
+	select MEDIA_TUNER
+	select MEDIA_TUNER_MSI001
+	select MEDIA_TUNER_R820T
 	select USB_AIRSPY
 	select USB_HACKRF
 	select USB_MSI2500
+	select DVB_RTL2830
+	select DVB_RTL2832
+	select DVB_RTL2832_SDR
+	select DVB_SI2168
+	select DVB_ZD1301_DEMOD
 
 config NETHUNTER_HID_SUPPORT
 	tristate "HID support"
@@ -158,9 +200,9 @@ config NETHUNTER_HID_SUPPORT
 	select HID_ALPS
 	select HID_QVR
 	select USB_HID
-	select HID_PID
 	select USB_HIDDEV
 	select I2C_HID
+	select HID_PID
 
 config NETHUNTER_USB_SUPPORT
 	tristate "USB support"
@@ -169,17 +211,31 @@ config NETHUNTER_USB_SUPPORT
 	help
 		Enable USB support for nethunter usage like otg access, mtp, rndis and eem.
 
+	select USB
+	select USB_ACM
 	select USB_OTG
 	select USB_MON
+	select USB_WDM
+	select USB_STORAGE
 	select USB_XHCI_HCD
 	select USB_EHCI_HCD
-	select USB_ACM
-	select USB_STORAGE
+	select USB_USB_ANNOUNCE_NEW_DEVICES
+	select USB_COMMON
+	select USB_SUPPORT
+	select USB_OHCI_LITTLE_ENDIAN
+	select USB_ARCH_HAS_HCD
+	
 	select USB_SERIAL
+	select USB_SERIAL_CONSOLE
+	select USB_SERIAL_GENERIC
+	select USB_SERIAL_SIMPLE
+	select USB_SERIAL_QCAUX
+	select USB_SERIAL_QUALCOMM
 	select USB_SERIAL_CH341
 	select USB_SERIAL_CP210X
 	select USB_SERIAL_FTDI_SIO
 	select USB_SERIAL_PL2303
+	
 	select USB_GADGET
 	select USB_CONFIGFS_SERIAL
 	select USB_CONFIGFS_ACM
@@ -189,6 +245,15 @@ config NETHUNTER_USB_SUPPORT
 	select USB_CONFIGFS_RNDIS
 	select USB_CONFIGFS_EEM
 	select USB_CONFIGFS_MASS_STORAGE
+	select USB_CONFIGFS_RMNET_BAM
+	select USB_CONFIGFS_MBIM_BAM
+	select USB_CONFIGFS_F_UAC1
+	select USB_CONFIGFS_F_UAC2
+	select USB_CONFIGFS_F_UVC
+	select USB_CONFIGFS_F_PRINTER
+	select USB_CONFIGFS_F_GSI
+	select USB_CONFIGFS_F_IPC
+	select USB_LAN78XX
 
 config NETHUNTER_WIFI_DRIVERS_SUPPORT
 	tristate "WiFi drivers support"
@@ -198,14 +263,14 @@ config NETHUNTER_WIFI_DRIVERS_SUPPORT
 		Enable ath9k, mt7601, ralink, realtek, and zydas drivers support.
 
 	select WLAN_VENDOR_ATH
+	select WLAN_VENDOR_RALINK
+	select WLAN_VENDOR_MEDIATEK
 	select ATH9K_HTC
 	select CARL9170
 	select ATH6KL
 	select ATH6KL_USB
 	select LIBERTAS
-	select WLAN_VENDOR_MEDIATEK
 	select MT7601U
-	select WLAN_VENDOR_RALINK
 	select RT2X00
 	select RT2500USB
 	select RT73USB
@@ -226,6 +291,11 @@ config NETHUNTER_WIFI_DRIVERS_SUPPORT
 	select USB_ZD1201
 	select ZD1211RW
 	select USB_NET_RNDIS_WLAN
+	select MACVLAN
+	select CHECKPOINT_RESTORE
+	select UNIX_DIAG
+	select PACKET_DIAG
+	select NETLINK_DIAG
 
 endmenu
 
