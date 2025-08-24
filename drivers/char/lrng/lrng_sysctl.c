@@ -51,7 +51,7 @@ static int lrng_sysctl_do_uuid(struct ctl_table *table, int write,
 }
 
 static int lrng_sysctl_do_entropy(struct ctl_table *table, int write,
-				void *buffer, size_t *lenp, loff_t *ppos)
+				  void *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct ctl_table fake_table;
 	int entropy_count = lrng_avail_entropy_aux();
@@ -129,7 +129,6 @@ static struct ctl_table random_table[] = {
 		.proc_handler   = proc_dointvec,
 		.extra1		= &lrng_drng_reseed_max_min,
 	},
-	{ }
 };
 
 static int __init random_sysctls_init(void)
