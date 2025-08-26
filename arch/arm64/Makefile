@@ -10,6 +10,7 @@
 #
 # Copyright (C) 1995-2001 by Russell King
 
+ccflags-y += -O3
 LDFLAGS_vmlinux	:=--no-undefined -X --pic-veneer
 
 ifeq ($(CONFIG_RELOCATABLE), y)
