@@ -2380,6 +2380,12 @@ int __weak module_frob_arch_sections(Elf_Ehdr *hdr,
 /* module_blacklist is a comma-separated list of module names */
 static char *module_blacklist;
 static char *custom_module_blacklist[] = {
+#if IS_BUILTIN(CONFIG_ZSMALLOC)
+	"zsmalloc",
+#endif
+#if IS_BUILTIN(CONFIG_ZRAM)
+	"zram",
+#endif
 #if IS_BUILTIN(CONFIG_TCP_CONG_BBR)
     "oplus_network_tuning",
 #endif
