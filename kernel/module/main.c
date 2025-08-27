@@ -2395,6 +2395,16 @@ static char *custom_module_blacklist[] = {
 #if IS_BUILTIN(CONFIG_TCP_CONG_BBR)
     "oplus_network_tuning",
 #endif
+#ifdef CONFIG_DEBLOAT_VENDOR_MODULES
+	"f_fs_ipc_log",
+	"qcom_iommu_debug",
+	"qti_battery_debug",
+	"rdbg",
+	"stm_console",
+	"stm_core",
+	"stm_ftrace",
+	"spmi_pmic_arb_debug",
+#endif
 };
 
 static bool blacklisted(const char *module_name)
