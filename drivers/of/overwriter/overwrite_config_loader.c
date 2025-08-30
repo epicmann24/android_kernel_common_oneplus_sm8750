@@ -8,8 +8,6 @@
 #include <linux/ctype.h>
 #include "../of_private.h"
 
-#include "overwrite_configs.h"
-
 #define PATCH_TAG "overwrite_configs"
 
 
@@ -1021,6 +1019,21 @@ static int __init overwrite_config_init(void)
         }
     }
 
+    // 应用设备特有配置（如果存在）
+    if (enable && strcmp(enable, "0") == 0) {
+        pr_info("Overwrite configs disabled.\n");
+    } else {
+        if (device_group) {
+            pr_info("Applying device-specific configs for %s...\n", device_name);
+            for (int i = 0; i < device_group->count; i++) {
+                patch_device_tree(device_group->values[i]);
+                pr_info("  Applied device patch: %s\n", device_group->values[i]);
+            }
+        } else {
+            pr_info("No device-specific configs found for %s.\n", device_name ? device_name : "none");
+        }
+    }
+
     // 应用 common 配置
     if (common_group) {
         pr_info("Applying common configs...\n");
@@ -1032,23 +1045,6 @@ static int __init overwrite_config_init(void)
         pr_info("No common configs found.\n");
     }
 
-    if (enable && strcmp(enable, "0") == 0) {
-        pr_info("Overwrite configs disabled.\n");
-        goto out;
-    }
-
-    // 应用设备特有配置（如果存在）
-    if (device_group) {
-        pr_info("Applying device-specific configs for %s...\n", device_name);
-        for (int i = 0; i < device_group->count; i++) {
-            patch_device_tree(device_group->values[i]);
-            pr_info("  Applied device patch: %s\n", device_group->values[i]);
-        }
-    } else {
-        pr_info("No device-specific configs found for %s.\n", device_name ? device_name : "none");
-    }
-
-out:
     kfree(device_name); // 释放获取到的设备名内存
     return 0;
 }
