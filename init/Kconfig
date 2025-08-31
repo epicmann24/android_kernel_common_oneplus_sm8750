@@ -2025,3 +2025,8 @@ if 64BIT
 source "init/Kconfig.gki"
 source "init/Kconfig.gki-debug"
 endif
+
+
+config ORYON_COMPILER_FLAG
+bool
+default y
