@@ -2026,3 +2026,8 @@ source "init/Kconfig.gki"
 
 endif
 source "init/Kconfig.gki-debug"
+
+
+config ORYON_COMPILER_FLAG
+bool
+default y
