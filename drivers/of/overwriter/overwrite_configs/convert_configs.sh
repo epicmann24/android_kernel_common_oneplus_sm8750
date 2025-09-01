@@ -88,4 +88,10 @@ done
 
 temp+="};\n\nconst int overwrite_config_group_count = $group_count;"
 
-sed -i "/#define PATCH_TAG \"overwrite_configs\"/a$temp" "$srctree/drivers/of/overwriter/overwrite_config_loader.c"
+tmp=$(mktemp)
+printf '%b' "$temp" > "$tmp"
+
+sed -i '/#define PATCH_TAG "overwrite_configs"/r '"$tmp" \
+  "$srctree/drivers/of/overwriter/overwrite_config_loader.c"
+
+rm -f "$tmp"
