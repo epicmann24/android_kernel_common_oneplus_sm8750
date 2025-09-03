@@ -25,7 +25,7 @@
 #include "blk-mq.h"
 #include "blk-mq-sched.h"
 
-#define ADIOS_VERSION "3.1.0"
+#define ADIOS_VERSION "3.1.2"
 
 /* Request Types:
  *
@@ -39,8 +39,8 @@
  *
  * Tier 1 (High Priority): I/O Barrier Guarantees                *
  * ---------------------------------------------------------------
- * - Target: Requests with the REQ_PREFLUSH flag.
- * - Purpose: To enforce a strict I/O barrier. When a PREFLUSH request is
+ * - Target: Requests with the REQ_OP_FLUSH flag.                     *
+ * - Purpose: To enforce a strict I/O barrier. When a flush request is
  *   received, the scheduler stops processing new requests from its main
  *   queues until all preceding requests have been completed. This guarantees
  *   the order of operations required by filesystems for data integrity.
@@ -88,17 +88,16 @@ static u8  default_bq_refill_below_ratio = 20;
 static u64 default_lat_model_latency_limit = 500000000ULL;
 // Batch ordering strategy
 static u64 default_batch_order = 0;
-// Flags to control compliance with block layer constraints
-static u64 default_compliance_flags = 0x1;
 
 /* Compliance Flags:
- * 0x1: REQ_FUA requests will be handled as Tier-1, strictly prioritized
- * 0x2: REQ_PREFLUSH requests will be handled as Tier-1, strictly prioritized
- * 0x4: Async requests will not be reordered based on the predicted latency
+ * 0x1: Async requests will not be reordered based on the predicted latency
  */
 enum adios_compliance_flags {
 	ADIOS_CF_FIXORDER  = 1U << 0,
 };
+
+// Flags to control compliance with block layer constraints
+static u64 default_compliance_flags = 0x0;
 
 // Dynamic thresholds for shrinkage
 static u32 default_lm_shrink_at_kreqs  =  5000;
@@ -894,7 +893,7 @@ static void insert_request_post_stability(struct blk_mq_hw_ctx *hctx,
 	struct adios_data *ad = q->elevator->elevator_data;
 	struct adios_rq_data *rd = get_rq_data(rq);
 	u8 optype = adios_optype(rq);
-	bool rq_is_preflush;
+	bool rq_is_flush;
 
 	rd->block_size = blk_rq_bytes(rq);
 	rd->pred_lat =
@@ -907,16 +906,16 @@ static void insert_request_post_stability(struct blk_mq_hw_ctx *hctx,
 	}
 
 	/*
-	 * Strict Barrier Handling for REQ_PREFLUSH:
-	 * If a PREFLUSH request arrives, or if the scheduler is already in a
+	 * Strict Barrier Handling for REQ_OP_FLUSH:                      *
+	 * If a flush request arrives, or if the scheduler is already in a
 	 * barrier-pending state, all subsequent requests are diverted to a
 	 * separate barrier_queue. This ensures that no new requests are processed
 	 * until all work preceding the barrier is complete.
 	 */
-	rq_is_preflush = rq->cmd_flags & REQ_PREFLUSH;
-	if (eval_adios_state(ad, ADIOS_STATE_BP) || rq_is_preflush) {
+	rq_is_flush = rq->cmd_flags & REQ_OP_FLUSH;
+	if (eval_adios_state(ad, ADIOS_STATE_BP) || rq_is_flush) {
 		scoped_guard(spinlock_irqsave, &ad->barrier_lock) {
-			if (rq_is_preflush)
+			if (rq_is_flush)
 				set_adios_state(ad, ADIOS_STATE_BP, 0, true);
 			list_add_tail(&rq->queuelist, &ad->barrier_queue);
 		}
@@ -1174,7 +1173,7 @@ static struct request *pop_next_bq_request_optype(struct adios_data *ad) {
 	if (!bq_state) return NULL;
 
 	struct request *rq;
-	u32 bq_idx = 31 - __builtin_clz(bq_state);
+	u32 bq_idx = __builtin_ctz(bq_state);
 
 	// Dispatch based on optype (FIFO within each) or single-queue elevator
 	rq = pop_bq_request(ad, bq_idx, false);
@@ -1186,7 +1185,7 @@ static struct request *pop_next_bq_request_elevator(struct adios_data *ad) {
 	if (!bq_state) return NULL;
 
 	struct request *rq;
-	u32 bq_idx = 31 - __builtin_clz(bq_state);
+	u32 bq_idx = __builtin_ctz(bq_state);
 	bool direction = (bq_idx == 1) & ad->elv_direction;
 
 	// Tier-2 (sync) is always high priority
@@ -1286,7 +1285,7 @@ static bool release_barrier_requests(struct adios_data *ad) {
 					continue;
 				}
 
-				if (trq->cmd_flags & REQ_PREFLUSH)
+				if (trq->cmd_flags & REQ_OP_FLUSH)
 					break;
 
 				list_move_tail(&trq->queuelist, &local_list);
@@ -1336,7 +1335,7 @@ retry:
 	/*
 	 * If all active queues are empty, check if we need to process a barrier.
 	 * This is the trigger to release requests that were held in barrier_queue
-	 * due to a REQ_PREFLUSH barrier.
+	 * due to a REQ_OP_FLUSH barrier.
 	 */
 	if (release_barrier_requests(ad))
 		goto retry;
