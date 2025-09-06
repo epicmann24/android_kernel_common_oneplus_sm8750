@@ -10,8 +10,7 @@
 #ifdef CONFIG_SCHED_BORE
 u8   __read_mostly sched_bore                   = 1;
 u8   __read_mostly sched_burst_exclude_kthreads = 1;
-u8   __read_mostly sched_burst_min_smooth       = 6;
-u8   __read_mostly sched_burst_max_damper       = 40;
+u8   __read_mostly sched_burst_smoothness       = 40;
 u8   __read_mostly sched_burst_fork_atavistic   = 1;
 u8   __read_mostly sched_burst_parity_threshold = 2;
 u8   __read_mostly sched_burst_penalty_offset   = 24;
@@ -87,34 +86,31 @@ void update_burst_score(struct sched_entity *se) {
 void update_curr_bore(u64 delta_exec, struct sched_entity *se) {
 	if (!entity_is_task(se) || se->bore_stats->stop_burst_update) return;
 
-	u32 prev_penalty = se->bore_stats->prev_burst_penalty;
-	u32 curr_penalty = calc_burst_penalty(se->bore_stats->burst_time);
-
 	se->bore_stats->burst_time += delta_exec;
-	se->bore_stats->curr_burst_penalty = curr_penalty;
-	if (curr_penalty > prev_penalty) {
-		u8 damper = se->bore_stats->damper;
-		u32 excess = curr_penalty - prev_penalty;
-		u32 soft_excess = excess / damper + !!(excess % damper);
-		se->bore_stats->burst_penalty = prev_penalty + soft_excess;
-	}
+	se->bore_stats->curr_burst_penalty = calc_burst_penalty(se->bore_stats->burst_time);
+	if (se->bore_stats->curr_burst_penalty > se->bore_stats->prev_burst_penalty)
+		se->bore_stats->burst_penalty = se->bore_stats->prev_burst_penalty +
+		(se->bore_stats->curr_burst_penalty - se->bore_stats->prev_burst_penalty) / se->bore_stats->burst_count;
 	update_burst_score(se);
 }
 
-static inline u32 binary_smooth(s32 new, s32 old, u8 damper) {
-	return old + ((new - old) / damper) + !!((new - old) % damper);
+static inline u32 binary_smooth(u32 new, u32 old, u8 damper) {
+	u32 abs_diff = (new > old)? (new - old): (old - new);
+	u32 adj_diff = (abs_diff / damper) + ((abs_diff % damper) != 0);
+	return (new > old)? (old + adj_diff): (old - adj_diff);
 }
 
 static void __restart_burst(struct sched_entity *se) {
 	se->bore_stats->prev_burst_penalty = binary_smooth(
-		se->bore_stats->curr_burst_penalty, se->bore_stats->prev_burst_penalty, max(se->bore_stats->damper, sched_burst_min_smooth));
-	se->bore_stats->burst_time = se->bore_stats->curr_burst_penalty = 0;
+		se->bore_stats->curr_burst_penalty, se->bore_stats->prev_burst_penalty, se->bore_stats->burst_count);
+	se->bore_stats->burst_time = 0;
+	se->bore_stats->curr_burst_penalty = 0;
 
-	u8 max_damper = sched_burst_max_damper;
-	if (se->bore_stats->damper < max_damper)
-		se->bore_stats->damper++;
-	else if (unlikely(se->bore_stats->damper > max_damper))
-		se->bore_stats->damper = max_damper;
+	u8 smoothness = sched_burst_smoothness;
+	if (se->bore_stats->burst_count < smoothness)
+		se->bore_stats->burst_count++;
+	else if (unlikely(se->bore_stats->burst_count > smoothness))
+		se->bore_stats->burst_count = smoothness;
 }
 
 inline void restart_burst(struct sched_entity *se) {
@@ -312,7 +308,7 @@ void sched_clone_bore(struct task_struct *p,
 	__restart_burst(se);
 	se->bore_stats->burst_penalty = se->bore_stats->prev_burst_penalty =
 		max(se->bore_stats->prev_burst_penalty, penalty);
-	se->bore_stats->damper = 1;
+	se->bore_stats->burst_count = 1;
 	se->bore_stats->child_burst.timestamp = 0;
 	se->bore_stats->group_burst.timestamp = 0;
 }
@@ -323,7 +319,7 @@ void reset_task_bore(struct task_struct *p) {
 	p->se.bore_stats->curr_burst_penalty = 0;
 	p->se.bore_stats->burst_penalty = 0;
 	p->se.bore_stats->burst_score = 0;
-	p->se.bore_stats->damper = 1;
+	p->se.bore_stats->burst_count = 1;
 	memset(&p->se.bore_stats->child_burst, 0, sizeof(struct sched_burst_cache));
 	memset(&p->se.bore_stats->group_burst, 0, sizeof(struct sched_burst_cache));
 }
@@ -359,17 +355,8 @@ static struct ctl_table sched_bore_sysctls[] = {
 		.extra2		= SYSCTL_ONE,
 	},
 	{
-		.procname	= "sched_burst_min_smooth",
-		.data		= &sched_burst_min_smooth,
-		.maxlen		= sizeof(u8),
-		.mode		= 0644,
-		.proc_handler = proc_dou8vec_minmax,
-		.extra1		= SYSCTL_ONE,
-		.extra2		= &maxval_8_bits,
-	},
-	{
-		.procname	= "sched_burst_max_damper",
-		.data		= &sched_burst_max_damper,
+		.procname	= "sched_burst_smoothness",
+		.data		= &sched_burst_smoothness,
 		.maxlen		= sizeof(u8),
 		.mode		= 0644,
 		.proc_handler = proc_dou8vec_minmax,

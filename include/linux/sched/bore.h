@@ -12,8 +12,7 @@
 #ifdef CONFIG_SCHED_BORE
 extern u8   __read_mostly sched_bore;
 extern u8   __read_mostly sched_burst_exclude_kthreads;
-extern u8   __read_mostly sched_burst_min_smooth;
-extern u8   __read_mostly sched_burst_max_damper;
+extern u8   __read_mostly sched_burst_smoothness;
 extern u8   __read_mostly sched_burst_fork_atavistic;
 extern u8   __read_mostly sched_burst_parity_threshold;
 extern u8   __read_mostly sched_burst_penalty_offset;
@@ -53,7 +52,7 @@ struct sched_bore_stats  {
 	u32				curr_burst_penalty;
 	u32				burst_penalty;
 	u8				burst_score;
-	u8				damper;
+	u8				burst_count;
 	bool			stop_burst_update;
 	struct sched_burst_cache child_burst;
 	struct sched_burst_cache group_burst;
