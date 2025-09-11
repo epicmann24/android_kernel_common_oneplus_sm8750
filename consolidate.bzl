@@ -49,7 +49,6 @@ def define_consolidate():
             "Image.lz4",
             "Image.gz",
         ],
-        page_size = "4k",
         module_implicit_outs = get_gki_modules_list("arm64") + get_kunit_modules_list("arm64"),
         build_config = rule_base + "_build_config",
         trim_nonlisted_kmi = False,
