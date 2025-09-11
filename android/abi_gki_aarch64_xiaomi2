@@ -2323,6 +2323,7 @@
   __traceiter_android_vh_get_page_wmark
   __traceiter_android_vh_ipi_stop
   __traceiter_android_vh_logbuf
+  __traceiter_android_vh_lruvec_del_folio
   __traceiter_android_vh_madvise_cold_or_pageout_abort
   __traceiter_android_vh_mem_cgroup_alloc
   __traceiter_android_vh_mem_cgroup_charge
@@ -2389,8 +2390,6 @@
   __traceiter_clock_set_rate
   __traceiter_cma_alloc_finish
   __traceiter_cma_release
-  __traceiter_cma_alloc_start
-  __traceiter_cma_alloc_busy_retry
   __traceiter_cpu_frequency_limits
   __traceiter_cpu_idle
   __traceiter_gpu_mem_total
@@ -2500,6 +2499,7 @@
   __tracepoint_android_vh_get_page_wmark
   __tracepoint_android_vh_ipi_stop
   __tracepoint_android_vh_logbuf
+  __tracepoint_android_vh_lruvec_del_folio
   __tracepoint_android_vh_madvise_cold_or_pageout_abort
   __tracepoint_android_vh_mem_cgroup_alloc
   __tracepoint_android_vh_mem_cgroup_charge
@@ -2564,8 +2564,6 @@
   __tracepoint_android_vh_vmscan_kswapd_done
   __tracepoint_block_rq_insert
   __tracepoint_clock_set_rate
-  __tracepoint_cma_alloc_start
-  __tracepoint_cma_alloc_busy_retry
   __tracepoint_cma_alloc_finish
   __tracepoint_cma_release
   __tracepoint_cpu_frequency_limits
