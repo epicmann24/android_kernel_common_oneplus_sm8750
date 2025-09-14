@@ -8,7 +8,7 @@
 #include "sched.h"
 
 #ifdef CONFIG_SCHED_BORE
-u8   __read_mostly sched_bore                   = 1;
+u8   __read_mostly sched_bore                   = 0;
 u8   __read_mostly sched_burst_exclude_kthreads = 1;
 u8   __read_mostly sched_burst_min_smooth       = 6;
 u8   __read_mostly sched_burst_max_damper       = 40;
