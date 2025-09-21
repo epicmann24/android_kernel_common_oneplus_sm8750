@@ -2409,6 +2409,9 @@ static char *custom_module_blacklist[] = {
 	"rdbg", "stm_heartbeat", "stm_p_ost", "stm_core", 
 	"stm_ftrace", "stm_console", "spmi_pmic_arb_debug", 
 #endif
+#if IS_ENABLED(CONFIG_SERIAL_MSM_GENI)
+	"msm_geni_serial",
+#endif
 };
 
 static bool blacklisted(const char *module_name)
