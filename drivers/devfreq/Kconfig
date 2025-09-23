@@ -73,6 +73,15 @@ config DEVFREQ_GOV_PASSIVE
 	  through sysfs entries. The passive governor recommends that
 	  devfreq device uses the OPP table to get the frequency/voltage.
 
+config DEVFREQ_GOV_QCOM_ADRENO_TZ
+	tristate "Qualcomm Technologies, Inc. GPU frequency governor"
+	default y
+	help
+	  GPU frequency governor for the Adreno GPU. Sets the frequency
+	  using an "on demand" algorithm in conjunction with other
+	  components on Adreno platforms. This is not useful for non-Adreno
+	  devices.
+
 comment "DEVFREQ Drivers"
 
 config ARM_EXYNOS_BUS_DEVFREQ

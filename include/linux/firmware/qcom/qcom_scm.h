@@ -84,6 +84,7 @@ extern bool qcom_scm_pas_supported(u32 peripheral);
 
 extern int qcom_scm_io_readl(phys_addr_t addr, unsigned int *val);
 extern int qcom_scm_io_writel(phys_addr_t addr, unsigned int val);
+extern int qcom_scm_io_reset(void);
 
 extern bool qcom_scm_restore_sec_cfg_available(void);
 extern int qcom_scm_restore_sec_cfg(u32 device_id, u32 spare);
@@ -97,6 +98,16 @@ extern int qcom_scm_assign_mem(phys_addr_t mem_addr, size_t mem_sz,
 			       u64 *src,
 			       const struct qcom_scm_vmperm *newvm,
 			       unsigned int dest_cnt);
+
+extern bool qcom_scm_dcvs_core_available(void);
+extern bool qcom_scm_dcvs_ca_available(void);
+extern int qcom_scm_dcvs_reset(void);
+extern int qcom_scm_dcvs_init_v2(phys_addr_t addr, size_t size, int *version);
+extern int qcom_scm_dcvs_init_ca_v2(phys_addr_t addr, size_t size);
+extern int qcom_scm_dcvs_update(int level, s64 total_time, s64 busy_time);
+extern int qcom_scm_dcvs_update_v2(int level, s64 total_time, s64 busy_time);
+extern int qcom_scm_dcvs_update_ca_v2(int level, s64 total_time, s64 busy_time,
+									  int context_count);
 
 extern bool qcom_scm_ocmem_lock_available(void);
 extern int qcom_scm_ocmem_lock(enum qcom_scm_ocmem_client id, u32 offset,
