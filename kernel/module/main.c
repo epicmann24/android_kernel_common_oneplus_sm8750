@@ -2397,6 +2397,7 @@ static char *custom_module_blacklist[] = {
     "oplus_bsp_hybridswap_zram",
 #endif
 #if IS_BUILTIN(CONFIG_TCP_CONG_BBR)
+	/* BBR3 compatibility*/
     "oplus_network_tuning",
 #endif
 #ifdef CONFIG_DEBLOAT_VENDOR_MODULES
@@ -2410,6 +2411,11 @@ static char *custom_module_blacklist[] = {
 #if IS_ENABLED(CONFIG_SERIAL_MSM_GENI)
 	"msm_geni_serial",
 #endif
+	/* Coresight, Do not disable the coresight core, as it is dependent on msm_kgsl. */
+	"coresight_tpda", "coresight_csr", "coresight_funnel", "coresight_tgu",
+	"coresight_trace_noc", "coresight_replicator", "coresight_cti", "coresight_qmi",
+	"coresight_dummy", "coresight_remote_etm", "coresight_tpdm", "coresight_uetm",
+	"coresight_stm", "coresight_tmc_sec", "coresight_tmc"
 };
 
 static bool blacklisted(const char *module_name)
