@@ -2387,6 +2387,24 @@ int __weak module_frob_arch_sections(Elf_Ehdr *hdr,
 
 /* module_blacklist is a comma-separated list of module names */
 static char *module_blacklist;
+static char *custom_module_blacklist[] = {
+#if IS_BUILTIN(CONFIG_CRYPTO_LZO)
+    "lzo", "lzo_rle",
+#endif
+#if IS_BUILTIN(CONFIG_ZRAM)
+	"oplus_bsp_hybridswap_zram",
+	"oplus_bsp_zram_opt",
+#endif
+#if IS_BUILTIN(CONFIG_ZSMALLOC)
+    "oplus_bsp_zsmalloc",
+#endif
+	/* Coresight, Do not disable the coresight core, as it is dependent on msm_kgsl. */
+	"coresight_tpda", "coresight_csr", "coresight_funnel", "coresight_tgu", 
+	"coresight_trace_noc", "coresight_replicator", "coresight_cti", "coresight_qmi", 
+	"coresight_dummy", "coresight_remote_etm", "coresight_tpdm", "coresight_uetm", 
+	"coresight_stm", "coresight_tmc_sec", "coresight_tmc"
+};
+
 static bool blacklisted(const char *module_name)
 {
 	const char *p;
