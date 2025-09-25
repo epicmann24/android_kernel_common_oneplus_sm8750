@@ -545,10 +545,6 @@ DECLARE_HOOK(android_vh_migration_target_bypass,
 DECLARE_HOOK(android_vh_swap_writepage,
 	TP_PROTO(unsigned long *sis_flags, struct page *page),
 	TP_ARGS(sis_flags, page));
-DECLARE_HOOK(android_vh_swap_readpage_bdev_sync,
-	TP_PROTO(struct block_device *bdev, sector_t sector,
-		struct page *page, bool *read),
-	TP_ARGS(bdev, sector, page, read));
 DECLARE_RESTRICTED_HOOK(android_rvh_swap_readpage_bdev_sync,
 	TP_PROTO(struct block_device *bdev, sector_t sector,
 		struct page *page, bool *read),
