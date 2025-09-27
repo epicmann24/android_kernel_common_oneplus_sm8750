@@ -551,9 +551,10 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 	const struct rtw_chip_info *chip = rtwdev->chip;
 	struct rtw_rx_pkt_stat pkt_stat;
 	struct ieee80211_rx_status rx_status;
+	u32 pkt_offset, next_pkt, urb_len;
+	struct sk_buff *next_skb;
 	struct sk_buff *skb;
 	u32 pkt_desc_sz = chip->rx_pkt_desc_sz;
-	u32 pkt_offset;
 	u8 *rx_desc;
 	int limit;
 
@@ -563,7 +564,7 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 			break;
 
 		rx_desc = skb->data;
-		chip->ops->query_rx_desc(rtwdev, rx_desc, &pkt_stat,
+		rtw_rx_query_rx_desc(rtwdev, rx_desc, &pkt_stat,
 					 &rx_status);
 		pkt_offset = pkt_desc_sz + pkt_stat.drv_info_sz +
 			     pkt_stat.shift;
@@ -579,6 +580,8 @@ static void rtw_usb_rx_handler(struct work_struct *work)
 			dev_kfree_skb_any(skb);
 			continue;
 		}
+
+		urb_len = skb->len;
 
 		skb_put(skb, pkt_stat.pkt_len);
 		skb_reserve(skb, pkt_offset);
@@ -1028,9 +1031,6 @@ int rtw_usb_probe(struct usb_interface *intf, const struct usb_device_id *id)
 		rtw_err(rtwdev, "failed to setup chip information\n");
 		goto err_destroy_rxwq;
 	}
-
-	rtw_usb_phy_cfg(rtwdev, USB_SPEED_HIGH);
-	rtw_usb_phy_cfg(rtwdev, USB_SPEED_SUPER);
 
 	ret = rtw_usb_switch_mode(rtwdev);
 	if (ret) {
