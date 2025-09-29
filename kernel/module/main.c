@@ -2389,10 +2389,12 @@ int __weak module_frob_arch_sections(Elf_Ehdr *hdr,
 static char *module_blacklist;
 static char *custom_module_blacklist[] = {
 #if IS_ENABLED(CONFIG_ZSMALLOC)
-	"zsmalloc",
+	"oplus_bsp_zsmalloc",
 #endif
 #if IS_ENABLED(CONFIG_ZRAM)
 	"zram",
+    "oplus_bsp_zram_opt",
+    "oplus_bsp_hybridswap_zram",
 #endif
 #if IS_BUILTIN(CONFIG_TCP_CONG_BBR)
     "oplus_network_tuning",
