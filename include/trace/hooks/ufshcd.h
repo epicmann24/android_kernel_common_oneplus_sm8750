@@ -17,7 +17,6 @@ DECLARE_HOOK(android_vh_ufs_fill_prdt,
 	TP_PROTO(struct ufs_hba *hba, struct ufshcd_lrb *lrbp,
 		 unsigned int segments, int *err),
 	TP_ARGS(hba, lrbp, segments, err));
-
 DECLARE_RESTRICTED_HOOK(android_rvh_ufs_reprogram_all_keys,
 			TP_PROTO(struct ufs_hba *hba, int *err),
 			TP_ARGS(hba, err), 1);

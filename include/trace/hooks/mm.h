@@ -144,6 +144,9 @@ DECLARE_HOOK(android_vh_rmqueue_bulk_bypass,
 	TP_PROTO(unsigned int order, struct per_cpu_pages *pcp, int migratetype,
 		struct list_head *list),
 	TP_ARGS(order, pcp, migratetype, list));
+DECLARE_HOOK(android_vh_reserve_highatomic_bypass,
+	TP_PROTO(struct page *page, bool *bypass),
+	TP_ARGS(page, bypass));
 DECLARE_HOOK(android_vh_ra_tuning_max_page,
 	TP_PROTO(struct readahead_control *ractl, unsigned long *max_page),
 	TP_ARGS(ractl, max_page));
@@ -494,7 +497,6 @@ DECLARE_HOOK(android_vh_swap_writepage,
 DECLARE_HOOK(android_vh_alloc_flags_cma_adjust,
 	TP_PROTO(gfp_t gfp_mask, unsigned int *alloc_flags),
 	TP_ARGS(gfp_mask, alloc_flags));
-
 DECLARE_HOOK(android_vh_copy_page_to_user,
 	TP_PROTO(struct page *page),
 	TP_ARGS(page));
@@ -507,6 +509,10 @@ DECLARE_HOOK(android_vh_page_private_mod,
 DECLARE_HOOK(android_vh_cma_alloc_fail,
 	TP_PROTO(char *name, unsigned long count, unsigned long req_count),
 	TP_ARGS(name, count, req_count));
+DECLARE_HOOK(android_vh_filemap_map_pages_range,
+	TP_PROTO(struct file *file, pgoff_t orig_start_pgoff,
+		pgoff_t last_pgoff, vm_fault_t ret),
+	TP_ARGS(file, orig_start_pgoff, last_pgoff, ret));
 #endif /* _TRACE_HOOK_MM_H */
 
 /* This part must be outside protection */
