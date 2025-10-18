@@ -21,6 +21,7 @@
   drm_vblank_work_schedule
   drm_vblank_work_cancel_sync
   drm_vblank_work_flush
+  devm_pci_remap_cfgspace
   hid_hw_request
   iio_map_array_register
   iio_map_array_unregister
@@ -90,3 +91,8 @@
   __tracepoint_dwc3_readl
   __tracepoint_dwc3_writel
   pinctrl_gpio_set_config
+  drm_is_panel_follower
+  drm_panel_add_follower
+  drm_panel_remove_follower
+  hid_driver_reset_resume
+  hid_driver_suspend

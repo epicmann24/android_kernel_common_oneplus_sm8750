@@ -29,6 +29,7 @@
 #include <linux/page_owner.h>
 #include <linux/sched/isolation.h>
 
+#include <trace/hooks/mm.h>
 #include "internal.h"
 
 #ifdef CONFIG_NUMA
@@ -1357,6 +1358,7 @@ const char * const vmstat_text[] = {
 	"thp_split_page",
 	"thp_split_page_failed",
 	"thp_deferred_split_page",
+	"thp_underused_split_page",
 	"thp_split_pmd",
 	"thp_shatter_page",
 	"thp_shatter_page_failed",
@@ -1639,6 +1641,7 @@ static int pagetypeinfo_show(struct seq_file *m, void *arg)
 	pagetypeinfo_showfree(m, pgdat);
 	pagetypeinfo_showblockcount(m, pgdat);
 	pagetypeinfo_showmixedcount(m, pgdat);
+	trace_android_vh_pagetypeinfo_show(m);
 
 	return 0;
 }

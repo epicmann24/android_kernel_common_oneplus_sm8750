@@ -13,6 +13,7 @@
   blk_stat_enable_accounting
   __brelse
   class_find_device
+  clk_set_duty_cycle
   cpufreq_unregister_notifier
   crypto_register_alg
   crypto_unregister_alg
@@ -107,9 +108,11 @@
   __traceiter_android_vh_account_process_tick_gran
   __traceiter_android_vh_adjust_kvmalloc_flags
   __traceiter_android_vh_alloc_pages_adjust_wmark
+  __traceiter_android_rvh_alloc_pages_adjust_wmark
   __traceiter_android_vh_alloc_pages_failure_bypass
   __traceiter_android_vh_alloc_pages_reclaim_bypass
   __traceiter_android_vh_alloc_pages_reset_wmark
+  __traceiter_android_rvh_alloc_pages_reset_wmark
   __traceiter_android_vh_alter_mutex_list_add
   __traceiter_android_vh_alter_rwsem_list_add
   __traceiter_android_vh_bd_link_disk_holder
@@ -138,6 +141,7 @@
   __traceiter_android_vh_f2fs_file_open
   __traceiter_android_vh_f2fs_ra_op_flags
   __traceiter_android_vh_filemap_update_page
+  __traceiter_android_vh_free_unref_page_list_bypass
   __traceiter_android_vh_free_task
   __traceiter_android_vh_free_unref_page_bypass
   __traceiter_android_vh_fuse_request_end
@@ -152,6 +156,8 @@
   __traceiter_android_vh_look_around_migrate_folio
   __traceiter_android_vh_lruvec_add_folio
   __traceiter_android_vh_lruvec_del_folio
+  __traceiter_android_vh_mempool_alloc_skip_wait
+  __traceiter_android_vh_mm_free_page
   __traceiter_android_vh_mmap_region
   __traceiter_android_vh_mutex_init
   __traceiter_android_vh_mutex_unlock_slowpath
@@ -237,9 +243,11 @@
   __tracepoint_android_vh_account_process_tick_gran
   __tracepoint_android_vh_adjust_kvmalloc_flags
   __tracepoint_android_vh_alloc_pages_adjust_wmark
+  __tracepoint_android_rvh_alloc_pages_adjust_wmark
   __tracepoint_android_vh_alloc_pages_failure_bypass
   __tracepoint_android_vh_alloc_pages_reclaim_bypass
   __tracepoint_android_vh_alloc_pages_reset_wmark
+  __tracepoint_android_rvh_alloc_pages_reset_wmark
   __tracepoint_android_vh_alter_mutex_list_add
   __tracepoint_android_vh_alter_rwsem_list_add
   __tracepoint_android_vh_bd_link_disk_holder
@@ -282,6 +290,8 @@
   __tracepoint_android_vh_look_around_migrate_folio
   __tracepoint_android_vh_lruvec_add_folio
   __tracepoint_android_vh_lruvec_del_folio
+  __tracepoint_android_vh_mempool_alloc_skip_wait
+  __tracepoint_android_vh_mm_free_page
   __tracepoint_android_vh_mmap_region
   __tracepoint_android_vh_mutex_init
   __tracepoint_android_vh_mutex_unlock_slowpath
@@ -312,6 +322,7 @@
   __tracepoint_android_vh_send_signal_locked
   __tracepoint_android_vh_shmem_swapin_folio
   __tracepoint_android_vh_should_alloc_pages_retry
+  __tracepoint_android_vh_free_unref_page_list_bypass
   __tracepoint_android_vh_shrink_folio_list
   __tracepoint_android_vh_shrink_node_memcgs
   __tracepoint_android_vh_sk_alloc
