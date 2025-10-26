@@ -2395,10 +2395,11 @@ static char *custom_module_blacklist[] = {
 	"zram",
     "oplus_bsp_zram_opt",
     "oplus_bsp_hybridswap_zram",
+	"oplus_bsp_fg_protect", "oplus_exit_mm_optimize",
 #endif
 #if IS_BUILTIN(CONFIG_TCP_CONG_BBR)
 	/* BBR3 compatibility*/
-    "oplus_network_tuning",
+    "oplus_network_tuning", 
 #endif
 #ifdef CONFIG_DEBLOAT_VENDOR_MODULES
 	"f_fs_ipc_log",
@@ -2407,15 +2408,14 @@ static char *custom_module_blacklist[] = {
 	"stm_console",
 	"stm_ftrace",
 	"spmi_pmic_arb_debug",
+	/* Coresight, Do not disable the coresight core, as it is dependent on msm_kgsl. */
+	"coresight_remote_etm", "coresight_tpdm", "coresight_uetm",
+	"coresight_stm", "coresight_tmc_sec", "rdbg",
+	"stm_heartbeat", "stm_p_ost", "stm_core",
 #endif
 #if IS_ENABLED(CONFIG_SERIAL_MSM_GENI)
 	"msm_geni_serial",
 #endif
-	/* Coresight, Do not disable the coresight core, as it is dependent on msm_kgsl. */
-	"coresight_tpda", "coresight_csr", "coresight_funnel", "coresight_tgu",
-	"coresight_trace_noc", "coresight_replicator", "coresight_cti", "coresight_qmi",
-	"coresight_dummy", "coresight_remote_etm", "coresight_tpdm", "coresight_uetm",
-	"coresight_stm", "coresight_tmc_sec", "coresight_tmc"
 };
 
 static bool blacklisted(const char *module_name)
