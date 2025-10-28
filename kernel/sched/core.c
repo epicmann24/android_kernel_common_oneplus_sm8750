@@ -10807,7 +10807,7 @@ void sched_move_task(struct task_struct *tsk)
 
 	SCHED_CHANGE_BLOCK(rq, tsk,
 			   DEQUEUE_SAVE | DEQUEUE_MOVE | DEQUEUE_NOCLOCK) {
-		sched_change_group(tsk, group);
+		sched_change_group(tsk);
 	}
 
 	/*
