@@ -70,9 +70,10 @@ struct seq_file;
 struct sighand_struct;
 struct signal_struct;
 struct task_delay_info;
-struct task_dma_buf_info;
 struct task_group;
 struct user_event_mm;
+
+#include <linux/sched/ext.h>
 
 /*
  * Task state bitmask. NOTE! These bits are also
@@ -296,6 +297,11 @@ enum {
 };
 
 extern void scheduler_tick(void);
+
+#ifdef CONFIG_SLIM_SCHED
+extern enum hrtimer_restart scheduler_tick_no_balance(struct hrtimer *timer);
+extern void stop_shadow_tick_timer(void);
+#endif
 
 #define	MAX_SCHEDULE_TIMEOUT		LONG_MAX
 
@@ -1003,7 +1009,6 @@ struct task_struct {
 	int __user			*clear_child_tid;
 
 	/* PF_KTHREAD | PF_IO_WORKER */
-	/* Otherwise used as task_dma_buf_info pointer */
 	void				*worker_private;
 
 	u64				utime;
@@ -1518,8 +1523,13 @@ struct task_struct {
 	 */
 	struct callback_head		l1d_flush_kill;
 #endif
+#ifdef CONFIG_SLIM_SCHED
+	ANDROID_KABI_USE(1, unsigned long sched_prop);
+	ANDROID_KABI_USE(2, struct sched_ext_entity *scx);
+#else
 	ANDROID_KABI_RESERVE(1);
 	ANDROID_KABI_RESERVE(2);
+#endif
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
 	ANDROID_KABI_RESERVE(5);
@@ -1922,6 +1932,7 @@ static inline int task_nice(const struct task_struct *p)
 {
 	return PRIO_TO_NICE((p)->static_prio);
 }
+
 
 extern int can_nice(const struct task_struct *p, const int nice);
 extern int task_curr(const struct task_struct *p);
