@@ -204,3 +204,5 @@ obj-$(CONFIG_S390)		+= s390/
 obj-y    						+= freq_qos_arbiter/
 
 obj-y    						+= cpufreq_bouncing/
+
+obj-y    						+= oplus_omrg/
