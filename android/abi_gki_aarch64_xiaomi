@@ -79,6 +79,9 @@
   scsi_device_set_state
   blk_mq_quiesce_tagset
   blk_mq_unquiesce_tagset
+  dev_pm_opp_find_freq_floor_indexed
+  scsi_host_busy
+  dev_pm_opp_find_freq_ceil_indexed
   memblock_free
   __mem_cgroup_charge
   __mem_cgroup_uncharge
@@ -546,3 +549,7 @@ __tracepoint_android_vh_filemap_map_pages_range
 
 __traceiter_android_vh_pageset_update
 __tracepoint_android_vh_pageset_update
+__traceiter_android_vh_nr_pcp_alloc
+__tracepoint_android_vh_nr_pcp_alloc
+__traceiter_android_vh_pcp_alloc_factor_adjust
+__tracepoint_android_vh_pcp_alloc_factor_adjust

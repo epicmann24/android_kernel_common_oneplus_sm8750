@@ -184,6 +184,15 @@ DECLARE_RESTRICTED_HOOK(android_rvh_account_irq,
 	TP_PROTO(struct task_struct *curr, int cpu, s64 delta, bool start),
 	TP_ARGS(curr, cpu, delta, start), 1);
 
+DECLARE_RESTRICTED_HOOK(android_rvh_before_pick_task_fair,
+	TP_PROTO(struct rq *rq, struct task_struct **p, struct sched_entity **se,
+			struct task_struct *prev, struct rq_flags *rf),
+	TP_ARGS(rq, p, se, prev, rf), 1);
+
+DECLARE_RESTRICTED_HOOK(android_rvh_balance_fair,
+	TP_PROTO(struct rq *rq, struct task_struct *prev, struct rq_flags *rf),
+	TP_ARGS(rq, prev, rf), 1);
+
 struct sched_entity;
 DECLARE_RESTRICTED_HOOK(android_rvh_place_entity,
 	TP_PROTO(struct cfs_rq *cfs_rq, struct sched_entity *se, int initial, u64 *vruntime),
@@ -218,10 +227,6 @@ DECLARE_RESTRICTED_HOOK(android_rvh_sched_fork_init,
 DECLARE_RESTRICTED_HOOK(android_rvh_ttwu_cond,
 	TP_PROTO(int cpu, bool *cond),
 	TP_ARGS(cpu, cond), 1);
-
-DECLARE_RESTRICTED_HOOK(android_rvh_schedule_bug,
-	TP_PROTO(void *unused),
-	TP_ARGS(unused), 1);
 
 DECLARE_RESTRICTED_HOOK(android_rvh_sched_exec,
 	TP_PROTO(bool *cond),
@@ -463,10 +468,6 @@ DECLARE_RESTRICTED_HOOK(android_rvh_update_blocked_fair,
 	TP_ARGS(rq), 1);
 
 struct sched_attr;
-
-DECLARE_HOOK(android_vh_set_sugov_sched_attr,
-	TP_PROTO(struct sched_attr *attr),
-	TP_ARGS(attr));
 
 DECLARE_RESTRICTED_HOOK(android_rvh_set_iowait,
 	TP_PROTO(struct task_struct *p, struct rq *rq, int *should_iowait_boost),
