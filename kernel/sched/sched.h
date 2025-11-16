@@ -2528,7 +2528,6 @@ extern void init_sched_rt_class(void);
 extern void init_sched_fair_class(void);
 
 extern void reweight_task(struct task_struct *p, int prio);
-extern void __setscheduler_prio(struct task_struct *p, int prio);
 extern bool __dequeue_task(struct rq *rq, struct task_struct *p, int flags);
 extern void dequeue_task(struct rq *rq, struct task_struct *p, int flags);
 
