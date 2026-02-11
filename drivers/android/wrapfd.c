@@ -298,12 +298,20 @@ struct wrap_ctx_mapping {
 	struct vm_operations_struct vm_ops;
 };
 
+#define OP_BLOCKED_MODIFICATION	BIT(0)
+#define OP_BLOCKED_MAPPING	BIT(1)
+
 struct wrap_ctx {
 	struct wrap_content *content;
 	spinlock_t lock; /* protects all fields below */
 	struct wrap_owner owner;
 	bool allow_guests;
 	int map_count;
+	/*
+	 * Mask of blocked operations when lock is not held due to possiblity
+	 * of sleep during the ongoing operation.
+	 */
+	unsigned int block_mask;
 };
 
 static struct wrap_ctx *create_wrap_ctx(void)
@@ -350,7 +358,6 @@ static int can_access(struct wrap_ctx *ctx, struct task_struct *task,
 		      bool check_content)
 {
 	assert_spin_locked(&ctx->lock);
-
 	if (!is_owner_task(ctx, task))
 		return -EBUSY;
 
@@ -361,6 +368,47 @@ static int can_access(struct wrap_ctx *ctx, struct task_struct *task,
 		return -ENOENT;
 
 	return 0;
+}
+
+static bool can_map(struct wrap_ctx *ctx)
+{
+	assert_spin_locked(&ctx->lock);
+	return (ctx->block_mask & OP_BLOCKED_MAPPING) == 0;
+}
+
+static int block_operations(struct wrap_ctx *ctx, unsigned int mask)
+{
+	int ret;
+
+	assert_spin_locked(&ctx->lock);
+	/* Any request should at least block modifications. */
+	if (WARN_ON((mask & OP_BLOCKED_MODIFICATION) == 0))
+		return -EINVAL;
+
+	ret = can_access(ctx, current, true);
+	if (ret)
+		return ret;
+
+	/*
+	 * The task is the owner, the content can't be modified by other
+	 * processes but racing threads of the owner process can still
+	 * modify it. Use block_mask bitmask to prevent that.
+	 */
+	if (ctx->block_mask & mask)
+		return -EAGAIN;
+
+	ctx->block_mask |= mask;
+
+	return 0;
+}
+
+static void unblock_operations(struct wrap_ctx *ctx)
+{
+	assert_spin_locked(&ctx->lock);
+	if (WARN_ON(!ctx->block_mask))
+		return;
+
+	ctx->block_mask = 0;
 }
 
 static void wrap_vm_open(struct vm_area_struct *vma)
@@ -405,6 +453,15 @@ static int wrap_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!ctx->allow_guests && is_owner(ctx) &&
 	    !is_owner_task(ctx, current)) {
 		ret = -EBUSY;
+		goto unlock;
+	}
+
+	/*
+	 * If mappings are blocked the content is being rewrapped or emptied.
+	 * Treat this as if the wrap is already empty.
+	 */
+	if (!can_map(ctx)) {
+		ret = -ENOENT;
 		goto unlock;
 	}
 
@@ -579,19 +636,19 @@ static int wrap_file_load(struct wrap_ctx *ctx,
 	}
 
 	spin_lock(&ctx->lock);
-	ret = can_access(ctx, current, true);
-	/*
-	 * Even though we drop the ctx->lock, the task is the owner,
-	 * if ret==0, so the content can't be erased or changed from
-	 * under us.
-	 */
+	ret = block_operations(ctx, OP_BLOCKED_MODIFICATION);
 	spin_unlock(&ctx->lock);
 
-	if (!ret)
-		ret = ctx->content->ops->load(ctx->content, file,
-					      wrapfd_load.file_offs,
-					      wrapfd_load.buf_offs,
-					      wrapfd_load.len);
+	if (ret)
+		goto put_file;
+
+	ret = ctx->content->ops->load(ctx->content, file,
+				      wrapfd_load.file_offs,
+				      wrapfd_load.buf_offs,
+				      wrapfd_load.len);
+	spin_lock(&ctx->lock);
+	unblock_operations(ctx);
+	spin_unlock(&ctx->lock);
 put_file:
 	fput(file);
 
@@ -615,7 +672,8 @@ static int wrap_file_rewrap(struct wrap_ctx *ctx,
 		return -EINVAL;
 
 	spin_lock(&ctx->lock);
-	ret = can_access(ctx, current, true);
+	ret = block_operations(ctx,
+			       OP_BLOCKED_MODIFICATION | OP_BLOCKED_MAPPING);
 	if (!ret) {
 		content = ctx->content;
 		ctx->content = NULL;
@@ -645,6 +703,10 @@ static int wrap_file_rewrap(struct wrap_ctx *ctx,
 	if (new_content != content)
 		content->ops->free(content);
 
+	spin_lock(&ctx->lock);
+	unblock_operations(ctx);
+	spin_unlock(&ctx->lock);
+
 	return ret;
 
 free_new_ctx:
@@ -659,6 +721,7 @@ restore_content:
 	 */
 	spin_lock(&ctx->lock);
 	ctx->content = content;
+	unblock_operations(ctx);
 	spin_unlock(&ctx->lock);
 out:
 	return ret;
@@ -671,12 +734,14 @@ static int wrap_file_empty(struct wrap_ctx *ctx)
 
 	spin_lock(&ctx->lock);
 
-	ret = can_access(ctx, current, true);
+	ret = block_operations(ctx,
+			       OP_BLOCKED_MODIFICATION | OP_BLOCKED_MAPPING);
 	if (ret)
 		goto unlock;
 
 	content = ctx->content;
 	ctx->content = NULL;
+	unblock_operations(ctx);
 unlock:
 	spin_unlock(&ctx->lock);
 
@@ -706,6 +771,9 @@ unlock:
 static int wrap_file_ioctl(struct wrap_ctx *ctx,
 			   unsigned int cmd, unsigned long arg)
 {
+	if (!ctx->content)
+		return -ENOENT; /* Wrap is empty */
+
 	if (ctx->content->ops->ioctl)
 		return ctx->content->ops->ioctl(ctx->content, cmd, arg);
 
