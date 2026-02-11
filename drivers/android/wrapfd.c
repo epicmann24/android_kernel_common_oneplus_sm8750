@@ -12,7 +12,6 @@
 #include <linux/fdtable.h>
 #include <linux/file.h>
 #include <linux/fs.h>
-#include <linux/hashtable.h>
 #include <linux/miscdevice.h>
 #include <linux/mm.h>
 #include <linux/mman.h>
@@ -39,8 +38,6 @@ struct wrap_content_operations {
 	int (*mmap_prepare)(struct wrap_content *content,
 			    struct vm_area_struct *vma);
 	int (*mmap)(struct wrap_content *content, struct vm_area_struct *vma);
-	vm_fault_t (*fault)(struct wrap_content *content,
-			    struct vm_fault *vmf);
 	void (*free)(struct wrap_content *content);
 	struct wrap_content *(*make_writable)(struct wrap_content *content,
 			      bool writable);
@@ -150,56 +147,6 @@ err_end_access:
 	return 0;
 }
 
-static int dmabuf_content_mmap_prepare(struct wrap_content *content,
-				       struct vm_area_struct *vma)
-{
-	struct wrap_content_dmabuf *dmabuf_content;
-
-	dmabuf_content = container_of(content, struct wrap_content_dmabuf,
-				      content);
-	if (vma->vm_flags & VM_MAYWRITE) {
-		if (!dmabuf_content->writable)
-			return -EINVAL;
-	}
-
-	vm_flags_set(vma, VM_SHARED | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
-
-	return 0;
-}
-
-static int dmabuf_content_mmap(struct wrap_content *content,
-			       struct vm_area_struct *vma)
-{
-	struct wrap_content_dmabuf *dmabuf_content;
-	int ret;
-
-	dmabuf_content = container_of(content, struct wrap_content_dmabuf,
-				      content);
-
-	ret = dma_buf_mmap(dmabuf_content->dmabuf, vma, 0);
-	if (ret)
-		return ret;
-
-	return 0;
-}
-
-static vm_fault_t dmabuf_content_fault(struct wrap_content *content,
-				       struct vm_fault *vmf)
-{
-	return vmf->vma->vm_ops->fault(vmf);
-}
-
-static void dmabuf_content_free(struct wrap_content *content)
-{
-	struct wrap_content_dmabuf *dmabuf_content;
-
-	dmabuf_content = container_of(content, struct wrap_content_dmabuf,
-				      content);
-	if (dmabuf_content->dmabuf)
-		dma_buf_put(dmabuf_content->dmabuf);
-	kfree(dmabuf_content);
-}
-
 static struct wrap_content *
 dmabuf_content_make_writable(struct wrap_content *content, bool writable)
 {
@@ -222,6 +169,44 @@ static bool dmabuf_content_is_writable(struct wrap_content *content)
 	return dmabuf_content->writable;
 }
 
+static int dmabuf_content_mmap_prepare(struct wrap_content *content,
+				       struct vm_area_struct *vma)
+{
+	if ((vma->vm_flags & VM_MAYWRITE) &&
+	    !dmabuf_content_is_writable(content))
+		return -EINVAL;
+
+	vm_flags_set(vma, VM_SHARED | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
+
+	return 0;
+}
+
+static int dmabuf_content_mmap(struct wrap_content *content,
+			       struct vm_area_struct *vma)
+{
+	struct wrap_content_dmabuf *dmabuf_content;
+	int ret;
+
+	dmabuf_content = container_of(content, struct wrap_content_dmabuf,
+				      content);
+
+	ret = dma_buf_mmap(dmabuf_content->dmabuf, vma, 0);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+static void dmabuf_content_free(struct wrap_content *content)
+{
+	struct wrap_content_dmabuf *dmabuf_content;
+
+	dmabuf_content = container_of(content, struct wrap_content_dmabuf,
+				      content);
+	if (dmabuf_content->dmabuf)
+		dma_buf_put(dmabuf_content->dmabuf);
+	kfree(dmabuf_content);
+}
 
 static void dmabuf_content_show_fdinfo(struct wrap_content *content,
 				       struct seq_file *m)
@@ -275,7 +260,6 @@ static struct wrap_content_operations dmabuf_content_ops = {
 	.load			= dmabuf_content_load,
 	.mmap_prepare		= dmabuf_content_mmap_prepare,
 	.mmap			= dmabuf_content_mmap,
-	.fault			= dmabuf_content_fault,
 	.make_writable		= dmabuf_content_make_writable,
 	.is_writable		= dmabuf_content_is_writable,
 	.free			= dmabuf_content_free,
@@ -308,9 +292,10 @@ struct wrap_owner {
 };
 
 struct wrap_ctx_mapping {
+	refcount_t refcnt;
 	struct wrap_ctx *ctx;
-	const struct vm_operations_struct *vm_ops;
-	void *vm_private_data;
+	const struct vm_operations_struct *content_vm_ops;
+	struct vm_operations_struct vm_ops;
 };
 
 struct wrap_ctx {
@@ -378,48 +363,36 @@ static int can_access(struct wrap_ctx *ctx, struct task_struct *task,
 	return 0;
 }
 
-static const struct vm_operations_struct wrap_vm_ops;
+static void wrap_vm_open(struct vm_area_struct *vma)
+{
+	struct wrap_ctx_mapping *mapping;
+
+	mapping = container_of(vma->vm_ops, struct wrap_ctx_mapping, vm_ops);
+	if (mapping->content_vm_ops && mapping->content_vm_ops->open)
+		mapping->content_vm_ops->open(vma);
+
+	spin_lock(&mapping->ctx->lock);
+	mapping->ctx->map_count++;
+	refcount_inc(&mapping->refcnt);
+	spin_unlock(&mapping->ctx->lock);
+}
 
 static void wrap_vm_close(struct vm_area_struct *vma)
 {
-	struct wrap_ctx_mapping *mapping = vma->vm_private_data;
-	struct wrap_ctx *ctx = mapping->ctx;
+	struct wrap_ctx_mapping *mapping;
+	struct wrap_ctx *ctx;
 
-	if (mapping->vm_ops && mapping->vm_ops->close) {
-		vma->vm_private_data = mapping->vm_private_data;
-		vma->vm_ops = mapping->vm_ops;
-		vma->vm_ops->close(vma);
-	}
+	mapping = container_of(vma->vm_ops, struct wrap_ctx_mapping, vm_ops);
+	if (mapping->content_vm_ops && mapping->content_vm_ops->close)
+		mapping->content_vm_ops->close(vma);
 
+	ctx = mapping->ctx;
 	spin_lock(&ctx->lock);
 	ctx->map_count--;
+	if (refcount_dec_and_test(&mapping->refcnt))
+		kfree(mapping);
 	spin_unlock(&ctx->lock);
-
-	kfree(mapping);
 }
-
-static vm_fault_t wrap_vm_fault(struct vm_fault *vmf)
-{
-	struct wrap_ctx_mapping *mapping = vmf->vma->vm_private_data;
-	struct wrap_ctx *ctx = mapping->ctx;
-	vm_fault_t ret;
-
-	if (!mapping->vm_ops || !mapping->vm_ops->fault)
-		return VM_FAULT_SIGBUS;
-
-	vmf->vma->vm_private_data = mapping->vm_private_data;
-	vmf->vma->vm_ops = mapping->vm_ops;
-	ret = ctx->content->ops->fault(ctx->content, vmf);
-	vmf->vma->vm_ops = &wrap_vm_ops;
-	vmf->vma->vm_private_data = ctx;
-
-	return ret;
-}
-
-static const struct vm_operations_struct wrap_vm_ops = {
-	.close		= wrap_vm_close,
-	.fault		= wrap_vm_fault,
-};
 
 static int wrap_mmap(struct file *file, struct vm_area_struct *vma)
 {
@@ -457,7 +430,7 @@ unlock:
 		goto err;
 
 	/* If we reached here then ctx->map_count has been incremented */
-	mapping = kmalloc(sizeof(*mapping), GFP_KERNEL);
+	mapping = kzalloc(sizeof(*mapping), GFP_KERNEL);
 	if (!mapping) {
 		ret = -ENOMEM;
 		goto err_dec;
@@ -469,11 +442,16 @@ unlock:
 		goto err_dec;
 	}
 
+	spin_lock(&ctx->lock);
+	mapping->content_vm_ops = vma->vm_ops;
+	if (vma->vm_ops)
+		mapping->vm_ops = *vma->vm_ops;
+	mapping->vm_ops.open = wrap_vm_open;
+	mapping->vm_ops.close = wrap_vm_close;
+	vma->vm_ops = &mapping->vm_ops;
 	mapping->ctx = ctx;
-	mapping->vm_ops = vma->vm_ops;
-	mapping->vm_private_data = vma->vm_private_data;
-	vma->vm_ops = &wrap_vm_ops;
-	vma->vm_private_data = mapping;
+	refcount_set(&mapping->refcnt, 1);
+	spin_unlock(&ctx->lock);
 
 	return 0;
 err_dec:
@@ -685,7 +663,6 @@ restore_content:
 out:
 	return ret;
 }
-
 
 static int wrap_file_empty(struct wrap_ctx *ctx)
 {
