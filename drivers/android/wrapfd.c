@@ -176,8 +176,6 @@ static int dmabuf_content_mmap_prepare(struct wrap_content *content,
 	    !dmabuf_content_is_writable(content))
 		return -EINVAL;
 
-	vm_flags_set(vma, VM_SHARED | VM_PFNMAP | VM_DONTEXPAND | VM_DONTDUMP);
-
 	return 0;
 }
 
