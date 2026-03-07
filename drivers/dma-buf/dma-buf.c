@@ -452,31 +452,7 @@ err:
  */
 int dma_buf_account_task(struct dma_buf *dmabuf, struct task_dma_buf_info *dmabuf_info)
 {
-	struct task_dma_buf_record *rec;
-
-	if (!static_key_enabled(&dmabuf_accounting_key))
-		return 0;
-
-	if (!dmabuf_info)
-		return 0;
-
-	if (!task_dmabuf_records_preload(1))
-		return -ENOMEM;
-
-	spin_lock(&dmabuf_info->lock);
-	rec = find_task_dmabuf_record(dmabuf_info, dmabuf);
-	if (rec) {
-		++rec->refcnt;
-		trim_task_dmabuf_records_locked();
-	} else {
-		rec = alloc_task_dmabuf_record();
-		WARN_ON(!rec);
-		add_task_dmabuf_record(dmabuf_info, dmabuf, rec);
-	}
-	spin_unlock(&dmabuf_info->lock);
-	task_dmabuf_records_preload_end();
-
-	return 0;
+	return __dma_buf_account_task(dmabuf, dmabuf_info, true);
 }
 
 /**
@@ -698,6 +674,16 @@ void put_dmabuf_info(struct task_dma_buf_info *dmabuf_info)
 	kfree(dmabuf_info);
 }
 
+#define COUNT_DMABUF_FDS(file_lookup_func) ({ \
+	size_t count = 0; \
+	for (unsigned int n = 0; n < files_fdtable(current->files)->max_fds; ++n) { \
+		struct file *file = file_lookup_func(current->files, n); \
+		if (file && is_dma_buf_file(file)) \
+			++count; \
+	} \
+	count; \
+})
+
 /*
  * begin_new_exec is the starting point for the execution of a new program. It involves unsharing
  * files_struct (possibly creating a new one), and installs a new mm_struct. Since this modifies the
@@ -705,12 +691,15 @@ void put_dmabuf_info(struct task_dma_buf_info *dmabuf_info)
  * the new files_struct and mm_struct that are about to be used by the current task. The MM will be
  * empty of dmabufs, but any dmabufs already accounted via file descriptors need to be accounted to
  * the new files_struct.
-*/
+ */
 int dma_buf_begin_new_exec(struct files_struct *old_files)
 {
 	struct task_dma_buf_info *new_dmabuf_info;
 	struct task_dma_buf_info *old_dmabuf_info = current->dmabuf_info;
 	struct files_struct *my_files = current->files;
+
+	if (!static_key_enabled(&dmabuf_accounting_key))
+		return 0;
 
 	new_dmabuf_info = alloc_task_dma_buf_info();
 	if (!new_dmabuf_info)
@@ -718,17 +707,44 @@ int dma_buf_begin_new_exec(struct files_struct *old_files)
 
 	/* Any dmabufs need to be accounted to new_dmabuf_info */
 	if (my_files) {
-		unsigned int n = 0;
+		size_t num_dmabuf_fds, num_dmabuf_fds_check;
+		unsigned int retries = 0;
+
+		/* Attempt to count dmabuf FDs locklessly before allocating */
+		rcu_read_lock();
+		num_dmabuf_fds = COUNT_DMABUF_FDS(files_lookup_fd_rcu);
+		rcu_read_unlock();
+retry:
+		if (!task_dmabuf_records_preload(num_dmabuf_fds))
+			goto err_prealloc;
 
 		spin_lock(&my_files->file_lock);
-		for (struct fdtable *fdt = files_fdtable(my_files); n < fdt->max_fds; n++) {
+
+		/* First make sure we have enough preallocated records */
+		num_dmabuf_fds_check = COUNT_DMABUF_FDS(files_lookup_fd_locked);
+
+		if (num_dmabuf_fds_check > num_dmabuf_fds) {
+			spin_unlock(&my_files->file_lock);
+
+			if (retries++ > 5) {
+				trim_task_dmabuf_records_locked();
+				task_dmabuf_records_preload_end();
+				goto err_retries;
+			}
+
+			task_dmabuf_records_preload_end();
+			num_dmabuf_fds = num_dmabuf_fds_check;
+			goto retry;
+		}
+
+		for (unsigned int n = 0; n < files_fdtable(my_files)->max_fds; n++) {
 			struct file *file = files_lookup_fd_locked(my_files, n);
 			int err;
 
 			if (!file || !is_dma_buf_file(file))
 				continue;
 
-			err = dma_buf_account_task(file->private_data, new_dmabuf_info);
+			err = __dma_buf_account_task(file->private_data, new_dmabuf_info, false);
 			if (err)
 				pr_err("dmabuf accounting failed during begin_new_exec, err %d\n",
 				       err);
@@ -748,15 +764,25 @@ int dma_buf_begin_new_exec(struct files_struct *old_files)
 		if (my_files == old_files)
 			put_dmabuf_info(my_files->dmabuf_info);
 
+		/* Finally swap over to the new dmabuf info */
 		refcount_inc(&new_dmabuf_info->refcnt);
 		my_files->dmabuf_info = new_dmabuf_info;
 		spin_unlock(&my_files->file_lock);
+
+		trim_task_dmabuf_records_locked();
+		task_dmabuf_records_preload_end();
 	}
 
 	current->dmabuf_info = new_dmabuf_info; // refcount from alloc_task_dma_buf_info
 	put_dmabuf_info(old_dmabuf_info);
 
 	return 0;
+
+err_prealloc:
+	trim_task_dmabuf_records();
+err_retries:
+	kfree(new_dmabuf_info);
+	return -ENOMEM;
 }
 
 static int dma_buf_mmap_internal(struct file *file, struct vm_area_struct *vma)
@@ -1736,6 +1762,12 @@ void dma_buf_unpin(struct dma_buf_attachment *attach)
 		dmabuf->ops->unpin(attach);
 }
 EXPORT_SYMBOL_NS_GPL(dma_buf_unpin, DMA_BUF);
+
+void dma_buf_mangle_sg_table(struct sg_table *sg_table)
+{
+	mangle_sg_table(sg_table);
+}
+EXPORT_SYMBOL_NS_GPL(dma_buf_mangle_sg_table, DMA_BUF);
 
 /**
  * dma_buf_map_attachment - Returns the scatterlist table of the attachment;
