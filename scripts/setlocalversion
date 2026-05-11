@@ -206,4 +206,4 @@ elif [ "${LOCALVERSION+set}" != "set" ]; then
 fi
 
 #echo "${KERNELVERSION}${file_localversion}${config_localversion}${LOCALVERSION}${scm_version}"
-echo "${KERNELVERSION}-OKI${config_localversion}${LOCALVERSION}"
+echo "${KERNELVERSION}-android15-8-gf4dc45704e54-abogki446052083-4k${LOCALVERSION}"
